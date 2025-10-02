@@ -1,104 +1,99 @@
 # cfgcut
 
-`cfgcut` is a Rust-based configuration parser designed to allow you to extract
-various sections of configuration ready to use as text objects.
+`cfgcut` is a command-line tool that helps network engineers slice big configuration dumps into the exact snippets they need. Feed it IOS, NX-OS, EOS, or Junos configs and it will walk the hierarchy, keep the right indentation and context, and hand you clean output that is ready for change reviews, audits, and automation.
 
-## Main use cases
+## Why cfgcut?
 
-- Extract sections of configuration for diffing between devices
-- Ensure configuration commands are present in configuration
+- **Precise matching** – Describe hierarchy with `||` separators and cfgcut anchors each segment for you. No more brittle `grep` pipelines.
+- **Keep context** – Matched lines are returned with the parent structure intact so the snippet still pastes cleanly back into a device.
+- **Batch friendly** – Point cfgcut at individual files, directories, or globs; it emits a non-zero exit code when nothing matches so it fits neatly into scripts and CI jobs.
+- **Safe to share** – Optional anonymisation scrubs usernames, secrets, ASNs, and IPv4 addresses while keeping the rest of the config readable.
+- **Token inventory** – Turn on JSON token output to export sensitive values (scrubbed or original) for post-processing.
 
-## Examples
+## Supported platforms
 
-Get all interfaces and just the commands that start with switchport.
+| Vendor | Platform |
+| --- | --- |
+| Cisco | IOS |
+| Cisco | NX-OS |
+| Arista | EOS |
+| Juniper | JunOS (brace syntax) |
+| Juniper | JunOS (set syntax) |
 
-```bash
-cfgcut -m 'interface .*||switchport .*' cisco.cfg
-```
+More dialects are on the roadmap. See the issue template "Platform support request" if you want to help add one.
 
-Get all descendant objects.
+## Install
 
-```bash
-$ cfgcut -m 'system|>>|' juniper.cfg
-system {
-  host-name test;
-  domain-name testnet.net;
-}
-```
-
-Extract an address from an interface.
+Grab a prebuilt binary from the [Releases](https://github.com/astral-sh/cfgcut/releases) page, or install from source with Cargo:
 
 ```bash
-$ cfgcut -m 'interfaces||ae1||unit 1||inet||address .*' -e
-192.168.0.1/24
+cargo install --git https://github.com/astral-sh/cfgcut cfgcut
 ```
 
-## Features
+The CLI is self-contained and runs anywhere Rust 1.90+ is available.
 
-- Ability to provide multiple match criteria
-- Non-zero exit code if there are no matches
+## Quick tour
 
-## Match syntax
+Assume `tests/fixtures/cisco_ios/sample.conf` looks like a typical IOS edge switch. Here are a few things you can do:
 
-The match syntax is fairly simple. The configuration is parsed into a hierarchy,
-and using `||` will allow you to descend down the hierarchy. You are allowed to
-use regex inside each level match. If you want to match infinite depth below
-a certain point, you can use the special delimiter `|>>|` that denotes the
-return of all lower levels. This is useful in deeply nested configurations like
-`JunOS`. If you simply want things at the current level you've nested down into,
-you can use `.*` to give all commands but ignore anything with
-a sublevel. This use case would be unusual, but if you wanted the system config
-in Juniper but only top-level objects like host-name and not users, this would
-allow you to do that. You can also do things like `|#|.*` to match only
-comments. Comments are filtered out, but by using `|#|` you can match on
-comments, and if you want them printed at the level they are parsed at, you can
-use the flag `-c` or `--with-comments`.
+### Pull a whole interface block
 
-Note that certain text will be ignored by the dialect parser. This is to
-prevent things like configuration hash sums and other irrelevant system-generated
-text from polluting your configuration.
-
-## Supported configuration formats
-
-Each vendor and platform pair is called a dialect. These dialects allow us to
-parse the configuration and generate the hierarchy. The dialect is what allows
-us to understand things like hierarchy, comments, or generated text.
-
-| Vendor | Platform | Supported |
-|---|---|---|
-| Cisco | IOS | |
-| Cisco | NX-OS | |
-| Cisco | IOS-XE | |
-| Cisco | IOS-XR | |
-| Cisco | AireOS | |
-| Arista | EOS | |
-| Juniper | JunOS | |
-
-### Experimental Features
-
-#### Variable extraction
-
-This feature attempts to pull objects like IP addresses, prefix list names, and
-MAC addresses from commands. This allows you to use a match statement for
-a specific level and then extract tokens that are at that level.
-
-#### Python bindings
-
-Python is the primary language of network engineers, so it is important to
-provide the capability to call this tool as a library. This feature allows you
-to work directly with the parsed text.
-
-```python
-from cfgcut import Cfg
-
-with open('cisco.txt') as f:
-  raw_config = f.read()
-
-parsed = Cfg(raw_config, force_dialect="cisco_ios")
-parsed.match("interface Gig.*|>>|")
-print(bool(parsed))  # True
+```bash
+cfgcut -m 'interface GigabitEthernet1|>>|' tests/fixtures/cisco_ios/sample.conf
 ```
 
-This feature uses `PyO3`.
+### Check for a shutdown uplink and exit quietly if it exists
 
-## Installation
+```bash
+cfgcut -q -m 'interface GigabitEthernet2||shutdown' tests/fixtures/cisco_ios/sample.conf
+```
+
+### Grab every interface subtree on a Junos device
+
+```bash
+cfgcut -m 'interfaces|>>|' tests/fixtures/juniper_junos/sample.conf
+```
+
+### Scrub secrets while exporting tokens
+
+```bash
+cfgcut -a --tokens -m '.*' tests/fixtures/cisco_ios/sample.conf
+```
+
+Use the return code (`echo $?`) inside scripts to determine whether a match was found.
+
+## Match expressions in plain language
+
+1. **Split levels with `||`.** Each segment represents a node in the configuration hierarchy: `protocols||bgp||neighbor .*` drills down from protocols to a specific neighbour.
+2. **Segments are anchored.** `GigabitEthernet1` only matches that exact stanza—no need to add `^` or `$`.
+3. **Descend with `|>>|`.** Place `|>>|` after a segment when you want the full subtree beneath it.
+4. **Target comments** by prefixing a segment with `|#|` and using `-c`/`--with-comments` to print them.
+
+The CLI keeps parent blocks in the output so pasted snippets remain valid configs.
+
+## Anonymisation & tokens
+
+- `-a` / `--anonymize` swaps usernames, passwords, ASNs, and IPv4 addresses with deterministic placeholders so you can share snippets safely.
+- `--tokens` emits newline-delimited JSON describing each sensitive token; pair with `--tokens-out <FILE>` to write them directly to disk for follow-up processing.
+
+## Python bindings (work in progress)
+
+A PyO3-based module (`pycfgcut`) mirrors the CLI surface. You can build it locally today with `maturin develop`, but prebuilt wheels are not yet published. Packaging plans and API details live in the mdBook.
+
+## Learn more
+
+Detailed matcher behaviour, contribution guidelines, coverage expectations, and the roadmap are documented in our mdBook:
+
+```
+mdbook serve docs
+```
+
+Open `http://localhost:3000` to browse the full guide.
+
+## For contributors
+
+- Run `mise run check` before sending a PR (fmt, clippy, tests, cargo-deny, docs).
+- Optional extras: `mise run coverage`, `mise run bench`, `mise run fuzz parser`.
+- See `CONTRIBUTING.md` and `docs/dialect_guidelines.md` for coding standards and dialect expectations.
+
+Happy slicing!

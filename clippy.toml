@@ -1,0 +1,11 @@
+doc-valid-idents = [
+    "CLI",
+    "IOS",
+    "NX-OS",
+    "JunOS",
+    "NAPALM",
+    "PyO3",
+]
+
+# Keep lint exceptions centralized instead of inline attributes.
+allow-private-module-inception = false

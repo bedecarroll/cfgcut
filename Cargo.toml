@@ -1,0 +1,10 @@
+[workspace]
+members = ["crates/cfgcut", "crates/pycfgcut"]
+resolver = "2"
+
+[workspace.package]
+edition = "2024"
+rust-version = "1.90"
+license = "MIT"
+repository = "https://github.com/astral-sh/cfgcut"
+homepage = "https://github.com/astral-sh/cfgcut"

@@ -1,0 +1,89 @@
+[tools]
+# Provision helper binaries via `mise install`; leave empty for now.
+
+[tasks.fmt]
+description = "Run rustfmt in check mode"
+run = ["cargo fmt --all --check"]
+
+[tasks.clippy]
+description = "Run clippy with all targets and features"
+run = ["cargo clippy --all-targets --all-features -- -D warnings"]
+
+[tasks.test]
+description = "Run the workspace test suite via cargo-nextest"
+run = ["""bash -lc 'if ! command -v cargo-nextest >/dev/null 2>&1; then
+  echo "cargo-nextest is not installed. Install with cargo install cargo-nextest --locked." >&2
+  exit 1
+fi
+cargo nextest run --workspace --all-targets
+cargo test --doc
+'"""]
+
+[tasks.deny]
+description = "Audit dependencies with cargo-deny when available"
+run = ["""bash -lc 'if command -v cargo-deny >/dev/null 2>&1; then
+  cargo deny check
+else
+  echo "cargo-deny not installed; skipping dependency audit" >&2
+fi'"""]
+
+[tasks.docs]
+description = "Build the mdBook documentation"
+run = ["""bash -lc 'if command -v mdbook >/dev/null 2>&1; then
+  mdbook build docs
+else
+  echo "mdbook not installed; skipping docs build" >&2
+fi'"""]
+
+[tasks.bench]
+description = "Run Criterion benchmarks"
+run = ["cargo bench"]
+
+[tasks.coverage]
+description = "Generate coverage report with cargo llvm-cov"
+run = ["""bash -lc 'if ! command -v cargo-llvm-cov >/dev/null 2>&1; then
+  echo "cargo-llvm-cov not installed. Install with cargo install cargo-llvm-cov." >&2
+  exit 1
+fi
+cargo llvm-cov clean --workspace
+cargo llvm-cov nextest --workspace --all-targets --html --ignore-filename-regex 'pycfgcut/src' --fail-under-lines 80
+mkdir -p target/llvm-cov
+cargo llvm-cov nextest --workspace --all-targets --lcov --ignore-filename-regex 'pycfgcut/src' --output-path target/llvm-cov/lcov.info --fail-under-lines 80
+'"""]
+
+[tasks.check]
+description = "Run formatting, linting, tests, dependency audit, and docs build"
+run = [
+  "mise run fmt",
+  "mise run clippy",
+  "mise run test",
+  "mise run deny",
+  "mise run docs"
+]
+
+[tasks.fuzz]
+description = "Run a cargo-fuzz target (default: parser)"
+run = ["""bash -lc 'set -euo pipefail
+if ! command -v cargo-fuzz >/dev/null 2>&1; then
+  echo "cargo-fuzz is not installed. Install with cargo install cargo-fuzz." >&2
+  exit 1
+fi
+if ! command -v rustup >/dev/null 2>&1; then
+  echo "rustup is required to select the nightly toolchain for fuzzing." >&2
+  exit 1
+fi
+if ! rustup toolchain list | grep -q "nightly"; then
+  echo "Rust nightly toolchain missing. Install with rustup toolchain install nightly." >&2
+  exit 1
+fi
+target=${1:-parser}
+shift || true
+rustup run nightly cargo fuzz run "${target}" "$@"'"""]
+
+[tasks.fuzz-parser]
+description = "Run the parser fuzz harness"
+run = ["mise run fuzz parser"]
+
+[tasks.fuzz-matcher]
+description = "Run the matcher fuzz harness"
+run = ["mise run fuzz matcher"]

@@ -1,0 +1,17 @@
+---
+source: crates/cfgcut/tests/match_snapshots.rs
+expression: snapshot
+---
+input: tests/fixtures/juniper_junos/full_lab.conf
+match: interfaces||ge-0/0/0|>>|
+---
+interfaces {
+  ge-0/0/0 {
+    description "to core";
+    unit 0 {
+      family inet {
+        address 10.0.0.1/30;
+      }
+    }
+  }
+}

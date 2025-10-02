@@ -1,0 +1,15 @@
+---
+source: crates/cfgcut/tests/match_snapshots.rs
+expression: snapshot
+---
+input: tests/fixtures/juniper_junos/full_lab.conf
+match: system||services|>>|
+---
+system {
+  services {
+    ssh;
+    netconf {
+      ssh;
+    }
+  }
+}
