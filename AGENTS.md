@@ -9,4 +9,5 @@
 - Clippy pedantic/nursery and `cargo fmt` must pass before landing changes.
 - Keep public APIs minimal; expose enums or types only when they communicate intent.
 - When in doubt, document assumptions in code comments, but avoid restating the obvious.
+- Any deferred work, ignored issue, or stub must carry a `TODO(code): <one line description>` comment so follow-ups are easy to track.
 - Plan ahead. Update the roadmap whenever scope shifts so future work stays visible.
