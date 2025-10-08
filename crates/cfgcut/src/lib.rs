@@ -12,15 +12,29 @@ use serde::Serialize;
 
 mod anonymize;
 mod dialect;
+mod inline_match;
 
 use self::dialect::{DialectKind, LineKind, ParsedConfig};
 use anonymize::{Anonymizer, TokenCapture, collect_plain_tokens};
+use inline_match::{InlineMatchParse, parse_inline_matches};
 
 #[derive(Debug)]
 pub enum CfgcutError {
-    Io { path: PathBuf, source: io::Error },
+    Io {
+        path: PathBuf,
+        source: io::Error,
+    },
     InvalidArguments(String),
     Pattern(String, regex::Error),
+    InlineMatches {
+        path: PathBuf,
+        message: String,
+    },
+    InlinePattern {
+        path: PathBuf,
+        pattern: String,
+        source: regex::Error,
+    },
 }
 
 impl fmt::Display for CfgcutError {
@@ -33,6 +47,26 @@ impl fmt::Display for CfgcutError {
             Self::Pattern(pattern, err) => {
                 write!(f, "invalid match pattern '{pattern}': {err}")
             }
+            Self::InlineMatches { path, message } => {
+                write!(
+                    f,
+                    "failed to parse inline matches in '{}': {message}",
+                    path.display()
+                )
+            }
+            Self::InlinePattern {
+                path,
+                pattern,
+                source,
+            } => {
+                write!(
+                    f,
+                    "invalid inline match pattern '{}' in '{}': {}",
+                    pattern,
+                    path.display(),
+                    source
+                )
+            }
         }
     }
 }
@@ -42,7 +76,9 @@ impl std::error::Error for CfgcutError {
         match self {
             Self::Io { source, .. } => Some(source),
             Self::Pattern(_, err) => Some(err),
+            Self::InlinePattern { source, .. } => Some(source),
             Self::InvalidArguments(_) => None,
+            Self::InlineMatches { .. } => None,
         }
     }
 }
@@ -117,6 +153,7 @@ pub struct RunOutput {
     pub matched: bool,
     pub stdout: String,
     pub tokens: Vec<TokenRecord>,
+    pub warnings: Vec<String>,
 }
 
 /// Execute `cfgcut` over the provided inputs.
@@ -125,19 +162,17 @@ pub struct RunOutput {
 /// Returns an error when match patterns are invalid, input paths cannot be
 /// resolved, or files cannot be read from disk.
 pub fn run(request: &RunRequest) -> Result<RunOutput, CfgcutError> {
-    if request.matches.is_empty() {
-        return Err(CfgcutError::InvalidArguments(
-            "at least one -m/--match pattern is required".to_string(),
-        ));
-    }
-
     let files = collect_files(&request.inputs)?;
-
-    let patterns = request
-        .matches
-        .iter()
-        .map(|raw| Pattern::parse(raw))
-        .collect::<Result<Vec<_>, _>>()?;
+    let cli_patterns = if request.matches.is_empty() {
+        None
+    } else {
+        let mut compiled = Vec::with_capacity(request.matches.len());
+        for raw in &request.matches {
+            let pattern = Pattern::parse(raw)?;
+            compiled.push(pattern);
+        }
+        Some(compiled)
+    };
 
     let mut output = String::new();
     let mut matched_any = false;
@@ -146,12 +181,21 @@ pub fn run(request: &RunRequest) -> Result<RunOutput, CfgcutError> {
 
     let mut anonymizer = anonymize.then(Anonymizer::new);
     let mut tokens = Vec::new();
+    let mut warnings = Vec::new();
 
     for path in files {
-        let content = fs::read_to_string(&path).map_err(|source| CfgcutError::Io {
+        let raw_content = fs::read_to_string(&path).map_err(|source| CfgcutError::Io {
             path: path.clone(),
             source,
         })?;
+        let InlineMatchParse {
+            matches: inline_strings,
+            body,
+        } = parse_inline_matches(&raw_content).map_err(|err| CfgcutError::InlineMatches {
+            path: path.clone(),
+            message: err.to_string(),
+        })?;
+        let content = body.into_owned();
         let (dialect_kind, parsed) = dialect::parse_with_detect(&content);
         let mut token_accumulator = request
             .token_output
@@ -161,7 +205,50 @@ pub fn run(request: &RunRequest) -> Result<RunOutput, CfgcutError> {
         let mut indices = BTreeSet::new();
         let mut matched_file = false;
 
-        for pattern in &patterns {
+        let mut inline_patterns = Vec::new();
+        let patterns_to_apply: &Vec<Pattern> = if let Some(patterns) = cli_patterns.as_ref() {
+            if inline_strings.is_some() {
+                warnings.push(format!(
+                    "{}: ignoring inline matches because CLI patterns were provided",
+                    path.display()
+                ));
+            }
+            patterns
+        } else {
+            let inline_strings = inline_strings.ok_or_else(|| {
+                CfgcutError::InvalidArguments(format!(
+                    "no match patterns provided via CLI or inline block in '{}'.",
+                    path.display()
+                ))
+            })?;
+
+            inline_patterns.reserve(inline_strings.len());
+            for raw in &inline_strings {
+                let pattern = match Pattern::parse(raw) {
+                    Ok(pattern) => pattern,
+                    Err(CfgcutError::Pattern(pattern_str, source)) => {
+                        return Err(CfgcutError::InlinePattern {
+                            path: path.clone(),
+                            pattern: pattern_str,
+                            source,
+                        });
+                    }
+                    Err(CfgcutError::InvalidArguments(message)) => {
+                        return Err(CfgcutError::InlineMatches {
+                            path: path.clone(),
+                            message,
+                        });
+                    }
+                    Err(err) => {
+                        return Err(err);
+                    }
+                };
+                inline_patterns.push(pattern);
+            }
+            &inline_patterns
+        };
+
+        for pattern in patterns_to_apply {
             let mut accumulator = MatchAccumulator::new(&parsed);
             pattern.apply(&parsed, &mut accumulator);
             if accumulator.matched {
@@ -199,6 +286,7 @@ pub fn run(request: &RunRequest) -> Result<RunOutput, CfgcutError> {
         matched: matched_any,
         stdout: output,
         tokens,
+        warnings,
     })
 }
 

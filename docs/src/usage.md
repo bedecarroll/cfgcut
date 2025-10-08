@@ -2,11 +2,11 @@
 
 ## Command reference
 
-`cfgcut` accepts one or more `-m/--match` expressions and a list of files or directories. Directories are expanded using glob semantics, so you can point the tool at an entire configuration dump.
+`cfgcut` accepts zero or more `-m/--match` expressions and a list of files or directories. Directories are expanded using glob semantics, so you can point the tool at an entire configuration dump. When no CLI patterns are supplied, `cfgcut` looks for an inline match block at the top of each file (see below).
 
 | Option | Description |
 | --- | --- |
-| `-m, --match <MATCH>` | Hierarchical regex segments (anchored). Repeat the flag for multiple patterns. |
+| `-m, --match <MATCH>` | Hierarchical regex segments (anchored). Repeat the flag for multiple patterns; takes precedence over inline blocks. |
 | `-c, --with-comments` | Include comment lines recognised by the active dialect. |
 | `-q, --quiet` | Suppress stdout; rely on exit status to detect matches. |
 | `-a, --anonymize` | Scramble usernames, secrets, ASNs, and IPv4 addresses deterministically. |
@@ -39,6 +39,19 @@ To grab an entire Junos subtree:
 ```bash
 cfgcut -m 'interfaces||ae1|>>|' tests/fixtures/juniper_junos/sample.conf
 ```
+
+### Inline match blocks
+
+Fixtures can carry their own match list by starting with a comment that follows this pattern:
+
+```
+{# [
+'hostname .*',
+"interfaces|>>|",
+] #}
+```
+
+Whitespace is ignored and you can mix single or double quotes. The block must appear before any configuration lines; `cfgcut` strips it before parsing so the comment never shows up in the output. If you also pass one or more `-m/--match` flags, the CLI values win and the tool emits a warning on stderr to highlight that the inline list was skipped.
 
 ## Anonymisation and token output
 

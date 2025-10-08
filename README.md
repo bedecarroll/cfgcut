@@ -69,6 +69,19 @@ Use the return code (`echo $?`) inside scripts to determine whether a match was 
 3. **Descend with `|>>|`.** Place `|>>|` after a segment when you want the full subtree beneath it.
 4. **Target comments** by prefixing a segment with `|#|` and using `-c`/`--with-comments` to print them.
 
+### Inline match blocks
+
+When you would rather bundle match expressions with a fixture, add a leading comment that looks like a Jinja block:
+
+```
+{# [
+'hostname lab-edge',
+'interfaces|>>|',
+] #}
+```
+
+Place the block at the very top of the file (whitespace is fine) and list each expression in single or double quotes. `cfgcut` will peel the comment before parsing so nothing leaks into the output. Command-line `-m/--match` arguments still win; if both are present `cfgcut` uses the CLI values and prints a warning on stderr so you know the inline list was ignored.
+
 The CLI keeps parent blocks in the output so pasted snippets remain valid configs.
 
 ## Anonymisation & tokens

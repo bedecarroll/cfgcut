@@ -26,8 +26,7 @@ struct Cli {
         short = 'm',
         long = "match",
         action = ArgAction::Append,
-        value_name = "MATCH",
-        required = true
+        value_name = "MATCH"
     )]
     matches: Vec<String>,
 
@@ -94,6 +93,9 @@ fn main() {
 
     match run(&request) {
         Ok(result) => {
+            for warning in &result.warnings {
+                eprintln!("{warning}");
+            }
             if !result.matched {
                 std::process::exit(1);
             }
