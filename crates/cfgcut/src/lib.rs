@@ -1,5 +1,6 @@
 #![warn(clippy::all, clippy::pedantic, clippy::nursery)]
 
+use std::borrow::Cow;
 use std::collections::{BTreeSet, VecDeque};
 use std::fmt;
 use std::fs;
@@ -77,8 +78,7 @@ impl std::error::Error for CfgcutError {
             Self::Io { source, .. } => Some(source),
             Self::Pattern(_, err) => Some(err),
             Self::InlinePattern { source, .. } => Some(source),
-            Self::InvalidArguments(_) => None,
-            Self::InlineMatches { .. } => None,
+            Self::InvalidArguments(_) | Self::InlineMatches { .. } => None,
         }
     }
 }
@@ -156,6 +156,98 @@ pub struct RunOutput {
     pub warnings: Vec<String>,
 }
 
+fn compile_cli_patterns(matches: &[String]) -> Result<Option<Vec<Pattern>>, CfgcutError> {
+    if matches.is_empty() {
+        return Ok(None);
+    }
+
+    let mut compiled = Vec::with_capacity(matches.len());
+    for raw in matches {
+        compiled.push(Pattern::parse(raw)?);
+    }
+    Ok(Some(compiled))
+}
+
+struct ParsedFile {
+    inline_matches: Option<Vec<String>>,
+    parsed: ParsedConfig,
+    dialect_kind: DialectKind,
+}
+
+fn parse_config_file(path: &Path) -> Result<ParsedFile, CfgcutError> {
+    let raw_content = fs::read_to_string(path).map_err(|source| CfgcutError::Io {
+        path: path.to_path_buf(),
+        source,
+    })?;
+    let InlineMatchParse { matches, body } =
+        parse_inline_matches(&raw_content).map_err(|err| CfgcutError::InlineMatches {
+            path: path.to_path_buf(),
+            message: err.to_string(),
+        })?;
+    let content = body.into_owned();
+    let (dialect_kind, parsed) = dialect::parse_with_detect(&content);
+    Ok(ParsedFile {
+        inline_matches: matches,
+        parsed,
+        dialect_kind,
+    })
+}
+
+fn resolve_patterns<'a>(
+    cli_patterns: Option<&'a [Pattern]>,
+    inline_strings: Option<&[String]>,
+    path: &Path,
+) -> Result<(Cow<'a, [Pattern]>, Option<String>), CfgcutError> {
+    if let Some(patterns) = cli_patterns {
+        let warning = if inline_strings.is_some() {
+            Some(format!(
+                "{}: ignoring inline matches because CLI patterns were provided",
+                path.display()
+            ))
+        } else {
+            None
+        };
+        return Ok((Cow::Borrowed(patterns), warning));
+    }
+
+    let inline_strings = inline_strings.ok_or_else(|| {
+        CfgcutError::InvalidArguments(format!(
+            "no match patterns provided via CLI or inline block in '{}'.",
+            path.display()
+        ))
+    })?;
+
+    let compiled = compile_inline_patterns(path, inline_strings)?;
+    Ok((Cow::Owned(compiled), None))
+}
+
+fn compile_inline_patterns(
+    path: &Path,
+    inline_strings: &[String],
+) -> Result<Vec<Pattern>, CfgcutError> {
+    let mut patterns = Vec::with_capacity(inline_strings.len());
+    for raw in inline_strings {
+        match Pattern::parse(raw) {
+            Ok(pattern) => patterns.push(pattern),
+            Err(CfgcutError::Pattern(pattern_str, source)) => {
+                return Err(CfgcutError::InlinePattern {
+                    path: path.to_path_buf(),
+                    pattern: pattern_str,
+                    source,
+                });
+            }
+            Err(CfgcutError::InvalidArguments(message)) => {
+                return Err(CfgcutError::InlineMatches {
+                    path: path.to_path_buf(),
+                    message,
+                });
+            }
+            Err(err) => return Err(err),
+        }
+    }
+    Ok(patterns)
+}
+
 /// Execute `cfgcut` over the provided inputs.
 ///
 /// # Errors
@@ -163,92 +255,38 @@ pub struct RunOutput {
 /// resolved, or files cannot be read from disk.
 pub fn run(request: &RunRequest) -> Result<RunOutput, CfgcutError> {
     let files = collect_files(&request.inputs)?;
-    let cli_patterns = if request.matches.is_empty() {
-        None
-    } else {
-        let mut compiled = Vec::with_capacity(request.matches.len());
-        for raw in &request.matches {
-            let pattern = Pattern::parse(raw)?;
-            compiled.push(pattern);
-        }
-        Some(compiled)
-    };
-
-    let mut output = String::new();
-    let mut matched_any = false;
+    let cli_patterns = compile_cli_patterns(&request.matches)?;
     let include_comments = matches!(request.comment_handling, CommentHandling::Include);
     let anonymize = matches!(request.anonymization, Anonymization::Enabled);
 
+    let mut output = String::new();
+    let mut matched_any = false;
     let mut anonymizer = anonymize.then(Anonymizer::new);
     let mut tokens = Vec::new();
     let mut warnings = Vec::new();
 
     for path in files {
-        let raw_content = fs::read_to_string(&path).map_err(|source| CfgcutError::Io {
-            path: path.clone(),
-            source,
-        })?;
-        let InlineMatchParse {
-            matches: inline_strings,
-            body,
-        } = parse_inline_matches(&raw_content).map_err(|err| CfgcutError::InlineMatches {
-            path: path.clone(),
-            message: err.to_string(),
-        })?;
-        let content = body.into_owned();
-        let (dialect_kind, parsed) = dialect::parse_with_detect(&content);
+        let ParsedFile {
+            inline_matches,
+            parsed,
+            dialect_kind,
+        } = parse_config_file(&path)?;
+
         let mut token_accumulator = request
             .token_output
             .as_ref()
             .map(|_| TokenAccumulator::new(dialect_kind));
 
+        let (pattern_set, warning) =
+            resolve_patterns(cli_patterns.as_deref(), inline_matches.as_deref(), &path)?;
+        if let Some(message) = warning {
+            warnings.push(message);
+        }
+
         let mut indices = BTreeSet::new();
         let mut matched_file = false;
 
-        let mut inline_patterns = Vec::new();
-        let patterns_to_apply: &Vec<Pattern> = if let Some(patterns) = cli_patterns.as_ref() {
-            if inline_strings.is_some() {
-                warnings.push(format!(
-                    "{}: ignoring inline matches because CLI patterns were provided",
-                    path.display()
-                ));
-            }
-            patterns
-        } else {
-            let inline_strings = inline_strings.ok_or_else(|| {
-                CfgcutError::InvalidArguments(format!(
-                    "no match patterns provided via CLI or inline block in '{}'.",
-                    path.display()
-                ))
-            })?;
-
-            inline_patterns.reserve(inline_strings.len());
-            for raw in &inline_strings {
-                let pattern = match Pattern::parse(raw) {
-                    Ok(pattern) => pattern,
-                    Err(CfgcutError::Pattern(pattern_str, source)) => {
-                        return Err(CfgcutError::InlinePattern {
-                            path: path.clone(),
-                            pattern: pattern_str,
-                            source,
-                        });
-                    }
-                    Err(CfgcutError::InvalidArguments(message)) => {
-                        return Err(CfgcutError::InlineMatches {
-                            path: path.clone(),
-                            message,
-                        });
-                    }
-                    Err(err) => {
-                        return Err(err);
-                    }
-                };
-                inline_patterns.push(pattern);
-            }
-            &inline_patterns
-        };
-
-        for pattern in patterns_to_apply {
+        for pattern in pattern_set.iter() {
             let mut accumulator = MatchAccumulator::new(&parsed);
             pattern.apply(&parsed, &mut accumulator);
             if accumulator.matched {
