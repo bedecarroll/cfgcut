@@ -10,14 +10,8 @@ description = "Run clippy with all targets and features"
 run = ["cargo clippy --all-targets --all-features -- -D warnings"]
 
 [tasks.test]
-description = "Run the workspace test suite via cargo-nextest"
-run = ["""bash -lc 'if ! command -v cargo-nextest >/dev/null 2>&1; then
-  echo "cargo-nextest is not installed. Install with cargo install cargo-nextest --locked." >&2
-  exit 1
-fi
-cargo nextest run --workspace --all-targets
-cargo test --doc
-'"""]
+description = "Run the documentation test suite"
+run = ["cargo test --doc"]
 
 [tasks.deny]
 description = "Audit dependencies with cargo-deny when available"
@@ -45,10 +39,14 @@ run = ["""bash -lc 'if ! command -v cargo-llvm-cov >/dev/null 2>&1; then
   echo "cargo-llvm-cov not installed. Install with cargo install cargo-llvm-cov." >&2
   exit 1
 fi
+if ! command -v cargo-nextest >/dev/null 2>&1; then
+  echo "cargo-nextest is not installed. Install with cargo install cargo-nextest --locked." >&2
+  exit 1
+fi
 cargo llvm-cov clean --workspace
 cargo llvm-cov nextest --workspace --all-targets --html --ignore-filename-regex 'pycfgcut/src' --fail-under-lines 80
 mkdir -p target/llvm-cov
-cargo llvm-cov nextest --workspace --all-targets --lcov --ignore-filename-regex 'pycfgcut/src' --output-path target/llvm-cov/lcov.info --fail-under-lines 80
+cargo llvm-cov report --lcov --ignore-filename-regex 'pycfgcut/src' --output-path target/llvm-cov/lcov.info --fail-under-lines 80
 '"""]
 
 [tasks.check]

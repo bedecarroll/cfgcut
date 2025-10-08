@@ -28,14 +28,14 @@ jobs:
       - uses: jdx/mise-action@v2
         with:
           version: 2025.10.5
-      - name: Install cargo-deny
-        run: cargo install cargo-deny
-      - name: Install mdBook
-        run: cargo install mdbook --locked
-      - name: Install cargo-llvm-cov
-        run: cargo install cargo-llvm-cov
-      - name: Install cargo-nextest
-        run: cargo install cargo-nextest --locked
+      - name: Install tooling
+        uses: taiki-e/install-action@v2
+        with:
+          tool: >-
+            cargo-deny@0.18.5,
+            cargo-llvm-cov@0.6.20,
+            cargo-nextest@0.9.105,
+            mdbook@0.4.52
       - name: Run checks
         run: mise run check
       - name: Coverage report
