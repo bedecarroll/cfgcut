@@ -24,10 +24,10 @@ More dialects are on the roadmap. See the issue template "Platform support reque
 
 ## Install
 
-Grab a prebuilt binary from the [Releases](https://github.com/astral-sh/cfgcut/releases) page, or install from source with Cargo:
+Grab a prebuilt binary from the [Releases](https://github.com/bedecarroll/cfgcut/releases) page, or install from source with Cargo:
 
 ```bash
-cargo install --git https://github.com/astral-sh/cfgcut cfgcut
+cargo install --git https://github.com/bedecarroll/cfgcut cfgcut
 ```
 
 The CLI is self-contained and runs anywhere Rust 1.90+ is available.
@@ -95,13 +95,7 @@ A PyO3-based module (`pycfgcut`) mirrors the CLI surface. You can build it local
 
 ## Learn more
 
-Detailed matcher behaviour, contribution guidelines, coverage expectations, and the roadmap are documented in our mdBook:
-
-```
-mdbook serve docs
-```
-
-Open `http://localhost:3000` to browse the full guide.
+Detailed matcher behaviour, contribution guidelines, coverage expectations, and the roadmap live in our mdBook: [cfgcut.bedecarroll.com](https://cfgcut.bedecarroll.com).
 
 ## For contributors
 
