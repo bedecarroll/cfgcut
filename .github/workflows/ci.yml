@@ -27,7 +27,7 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
       - uses: jdx/mise-action@v2
         with:
-          version: latest
+          version: 2025.10.5
       - name: Install cargo-deny
         run: cargo install cargo-deny
       - name: Install mdBook
@@ -59,7 +59,7 @@ jobs:
           key: ${{ runner.os }}-cargo-fuzz-${{ hashFiles('**/Cargo.lock') }}
       - uses: jdx/mise-action@v2
         with:
-          version: latest
+          version: 2025.10.5
       - name: Install cargo-fuzz
         run: cargo install cargo-fuzz
       - name: Install nightly toolchain

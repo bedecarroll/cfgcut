@@ -135,7 +135,7 @@ fn first_non_ws(text: &str) -> Option<usize> {
         .map(|(idx, _)| idx)
 }
 
-fn is_inline_ws(ch: char) -> bool {
+const fn is_inline_ws(ch: char) -> bool {
     ch.is_whitespace() || ch == '\u{feff}'
 }
 
