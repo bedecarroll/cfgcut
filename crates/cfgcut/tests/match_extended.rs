@@ -35,18 +35,14 @@ fn junos_descend_all_returns_subtree() {
     let header_line = header("##", &path);
     let path_str = path.to_string_lossy().into_owned();
     let mut cmd = cfgcut_cmd();
-    cmd.args([
-        "-m",
-        "system|>>|",
-        path_str.as_str(),
-    ])
-    .assert()
-    .success()
-    .stdout(predicate::str::contains(&header_line))
-    .stdout(predicate::str::contains("system {"))
-    .stdout(predicate::str::contains("host-name vsrx;"))
-    .stdout(predicate::str::contains("}"))
-    .stdout(predicate::str::contains("version").not());
+    cmd.args(["-m", "system|>>|", path_str.as_str()])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains(&header_line))
+        .stdout(predicate::str::contains("system {"))
+        .stdout(predicate::str::contains("host-name vsrx;"))
+        .stdout(predicate::str::contains("}"))
+        .stdout(predicate::str::contains("version").not());
 }
 
 #[test]
@@ -55,18 +51,14 @@ fn junos_interfaces_descend_all_limits_scope() {
     let header_line = header("##", &path);
     let path_str = path.to_string_lossy().into_owned();
     let mut cmd = cfgcut_cmd();
-    cmd.args([
-        "-m",
-        "interfaces|>>|",
-        path_str.as_str(),
-    ])
-    .assert()
-    .success()
-    .stdout(predicate::str::contains(&header_line))
-    .stdout(predicate::str::contains("interfaces {"))
-    .stdout(predicate::str::contains("ge-0/0/0"))
-    .stdout(predicate::str::contains("system {").not())
-    .stdout(predicate::str::contains("version").not());
+    cmd.args(["-m", "interfaces|>>|", path_str.as_str()])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains(&header_line))
+        .stdout(predicate::str::contains("interfaces {"))
+        .stdout(predicate::str::contains("ge-0/0/0"))
+        .stdout(predicate::str::contains("system {").not())
+        .stdout(predicate::str::contains("version").not());
 }
 
 #[test]
@@ -75,18 +67,14 @@ fn junos_specific_interface_descend_all_is_anchored() {
     let header_line = header("##", &path);
     let path_str = path.to_string_lossy().into_owned();
     let mut cmd = cfgcut_cmd();
-    cmd.args([
-        "-m",
-        "interfaces||ge-.*0|>>|",
-        path_str.as_str(),
-    ])
-    .assert()
-    .success()
-    .stdout(predicate::str::contains(&header_line))
-    .stdout(predicate::str::contains("interfaces {"))
-    .stdout(predicate::str::contains("ge-0/0/0"))
-    .stdout(predicate::str::contains("ge-0/0/1").not())
-    .stdout(predicate::str::contains("system {").not());
+    cmd.args(["-m", "interfaces||ge-.*0|>>|", path_str.as_str()])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains(&header_line))
+        .stdout(predicate::str::contains("interfaces {"))
+        .stdout(predicate::str::contains("ge-0/0/0"))
+        .stdout(predicate::str::contains("ge-0/0/1").not())
+        .stdout(predicate::str::contains("system {").not());
 }
 
 #[test]
@@ -95,18 +83,14 @@ fn junos_unit_match_without_descend_returns_line_and_path() {
     let header_line = header("##", &path);
     let path_str = path.to_string_lossy().into_owned();
     let mut cmd = cfgcut_cmd();
-    cmd.args([
-        "-m",
-        "interfaces||ge-.*||unit 0",
-        path_str.as_str(),
-    ])
-    .assert()
-    .success()
-    .stdout(predicate::str::contains(&header_line))
-    .stdout(predicate::str::contains("interfaces {"))
-    .stdout(predicate::str::contains("ge-0/0/0"))
-    .stdout(predicate::str::contains("ge-0/0/1"))
-    .stdout(predicate::str::contains("family inet").not());
+    cmd.args(["-m", "interfaces||ge-.*||unit 0", path_str.as_str()])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains(&header_line))
+        .stdout(predicate::str::contains("interfaces {"))
+        .stdout(predicate::str::contains("ge-0/0/0"))
+        .stdout(predicate::str::contains("ge-0/0/1"))
+        .stdout(predicate::str::contains("family inet").not());
 }
 
 #[test]
@@ -195,12 +179,12 @@ fn glob_pattern_collects_files() {
         "interface Ethernet1",
         pattern.as_str(),
     ])
-        .assert()
-        .success()
-        .stdout(predicate::str::contains(&ios_header))
-        .stdout(predicate::str::contains(&eos_header))
-        .stdout(predicate::str::contains("interface GigabitEthernet1"))
-        .stdout(predicate::str::contains("interface Ethernet1"));
+    .assert()
+    .success()
+    .stdout(predicate::str::contains(&ios_header))
+    .stdout(predicate::str::contains(&eos_header))
+    .stdout(predicate::str::contains("interface GigabitEthernet1"))
+    .stdout(predicate::str::contains("interface Ethernet1"));
 }
 
 #[test]
@@ -308,20 +292,16 @@ fn junos_set_subtree_expansion() {
     let header_line = header("#", &path);
     let path_str = path.to_string_lossy().into_owned();
     let mut cmd = cfgcut_cmd();
-    cmd.args([
-        "-m",
-        "interfaces||ge-0/0/0|>>|",
-        path_str.as_str(),
-    ])
-    .assert()
-    .success()
-    .stdout(predicate::str::contains(&header_line))
-    .stdout(predicate::str::contains(
-        "set interfaces ge-0/0/0 unit 0 family inet address",
-    ))
-    .stdout(predicate::str::contains(
-        "set interfaces ge-0/0/0 unit 0 description",
-    ));
+    cmd.args(["-m", "interfaces||ge-0/0/0|>>|", path_str.as_str()])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains(&header_line))
+        .stdout(predicate::str::contains(
+            "set interfaces ge-0/0/0 unit 0 family inet address",
+        ))
+        .stdout(predicate::str::contains(
+            "set interfaces ge-0/0/0 unit 0 description",
+        ));
 }
 
 #[test]
@@ -386,12 +366,8 @@ fn junos_unit_descend_returns_full_subtree() {
     let expected = format!("{}\n{expected}", header("##", &path));
     let path_str = path.to_string_lossy().into_owned();
     let mut cmd = cfgcut_cmd();
-    cmd.args([
-        "-m",
-        "interfaces||ge-.*||unit 0|>>|",
-        path_str.as_str(),
-    ])
-    .assert()
-    .success()
-    .stdout(predicate::str::diff(expected));
+    cmd.args(["-m", "interfaces||ge-.*||unit 0|>>|", path_str.as_str()])
+        .assert()
+        .success()
+        .stdout(predicate::str::diff(expected));
 }

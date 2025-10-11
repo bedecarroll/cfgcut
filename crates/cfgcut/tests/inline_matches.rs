@@ -1,6 +1,6 @@
 use assert_cmd::Command;
 use predicates::prelude::*;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 fn cfgcut_cmd() -> Command {
     let mut cmd = Command::cargo_bin("cfgcut").unwrap();
@@ -14,7 +14,7 @@ fn fixture(rel: &str) -> PathBuf {
         .join(rel)
 }
 
-fn expected_with_header(marker: &str, path: &PathBuf, body: &str) -> String {
+fn expected_with_header(marker: &str, path: &Path, body: &str) -> String {
     let name = path
         .file_name()
         .map(|name| name.to_string_lossy().into_owned())
