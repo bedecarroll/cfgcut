@@ -30,15 +30,10 @@ fn expected_with_header(marker: &str, path: &str, body: &str) -> String {
 #[test]
 fn ios_interface_block_matches_expected() {
     let path = fixture_path("cisco_ios/sample.conf");
-    let body =
-        "interface GigabitEthernet1\n ip address dhcp\n negotiation auto\n no mop enabled\n";
+    let body = "interface GigabitEthernet1\n ip address dhcp\n negotiation auto\n no mop enabled\n";
     let expected = expected_with_header("!", &path, body);
     cfgcut_cmd()
-        .args([
-            "-m",
-            "interface GigabitEthernet1|>>|",
-            &path,
-        ])
+        .args(["-m", "interface GigabitEthernet1|>>|", &path])
         .assert()
         .success()
         .stdout(predicate::str::diff(expected));
@@ -50,11 +45,7 @@ fn ios_route_map_set_block_matches_expected() {
     let body = "route-map next-hop-self permit 10\n set ip next-hop peer-address\n";
     let expected = expected_with_header("!", &path, body);
     cfgcut_cmd()
-        .args([
-            "-m",
-            "route-map next-hop-self permit 10|>>|",
-            &path,
-        ])
+        .args(["-m", "route-map next-hop-self permit 10|>>|", &path])
         .assert()
         .success()
         .stdout(predicate::str::diff(expected));
@@ -66,11 +57,7 @@ fn eos_interface_block_matches_expected() {
     let body = "interface Ethernet1\n description to-core\n switchport mode trunk\n";
     let expected = expected_with_header("!", &path, body);
     cfgcut_cmd()
-        .args([
-            "-m",
-            "interface Ethernet1|>>|",
-            &path,
-        ])
+        .args(["-m", "interface Ethernet1|>>|", &path])
         .assert()
         .success()
         .stdout(predicate::str::diff(expected));
@@ -82,11 +69,7 @@ fn eos_route_map_block_matches_expected() {
     let body = "route-map RM-EDGE permit 10\n set ip next-hop peer-address\n";
     let expected = expected_with_header("!", &path, body);
     cfgcut_cmd()
-        .args([
-            "-m",
-            "route-map RM-EDGE permit 10|>>|",
-            &path,
-        ])
+        .args(["-m", "route-map RM-EDGE permit 10|>>|", &path])
         .assert()
         .success()
         .stdout(predicate::str::diff(expected));
@@ -95,15 +78,10 @@ fn eos_route_map_block_matches_expected() {
 #[test]
 fn nxos_interface_block_matches_expected() {
     let path = fixture_path("cisco_nxos/sample.conf");
-    let body =
-        "interface Ethernet1/1\n description server-link\n no shutdown\n switchport\n";
+    let body = "interface Ethernet1/1\n description server-link\n no shutdown\n switchport\n";
     let expected = expected_with_header("!", &path, body);
     cfgcut_cmd()
-        .args([
-            "-m",
-            "interface Ethernet1/1|>>|",
-            &path,
-        ])
+        .args(["-m", "interface Ethernet1/1|>>|", &path])
         .assert()
         .success()
         .stdout(predicate::str::diff(expected));
@@ -115,11 +93,7 @@ fn nxos_feature_line_matches_expected() {
     let body = "feature interface-vlan\n";
     let expected = expected_with_header("!", &path, body);
     cfgcut_cmd()
-        .args([
-            "-m",
-            "feature interface-vlan",
-            &path,
-        ])
+        .args(["-m", "feature interface-vlan", &path])
         .assert()
         .success()
         .stdout(predicate::str::diff(expected));
@@ -131,11 +105,7 @@ fn junos_brace_subtree_matches_expected() {
     let expected = "interfaces {\n  ge-0/0/0 {\n    unit 0 {\n      family inet {\n        dhcp;\n      }\n    }\n  }\n}\n";
     let expected = expected_with_header("##", &path, expected);
     cfgcut_cmd()
-        .args([
-            "-m",
-            "interfaces||ge-0/0/0|>>|",
-            &path,
-        ])
+        .args(["-m", "interfaces||ge-0/0/0|>>|", &path])
         .assert()
         .success()
         .stdout(predicate::str::diff(expected));
@@ -147,11 +117,7 @@ fn junos_set_subtree_matches_expected() {
     let expected = "set interfaces\nset interfaces ge-0/0/0\nset interfaces ge-0/0/0 unit 0\nset interfaces ge-0/0/0 unit 0 family inet\nset interfaces ge-0/0/0 unit 0 family inet address 10.0.0.1/24\nset interfaces ge-0/0/0 unit 0 description Uplink to core\n";
     let expected = expected_with_header("#", &path, expected);
     cfgcut_cmd()
-        .args([
-            "-m",
-            "interfaces||ge-0/0/0|>>|",
-            &path,
-        ])
+        .args(["-m", "interfaces||ge-0/0/0|>>|", &path])
         .assert()
         .success()
         .stdout(predicate::str::diff(expected));
