@@ -1,0 +1,70 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  schedule:
+    - cron: '0 5 * * 1'
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.90
+          components: clippy,rustfmt
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+      - uses: jdx/mise-action@v2
+        with:
+          version: 2025.10.5
+      - name: Install tooling
+        uses: taiki-e/install-action@v2
+        with:
+          tool: >-
+            cargo-deny@0.18.5,
+            cargo-llvm-cov@0.6.20,
+            cargo-nextest@0.9.105,
+            mdbook@0.4.52
+      - name: Run checks
+        run: mise run check
+      - name: Coverage report
+        run: mise run coverage
+
+  fuzz-smoke:
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.90
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-fuzz-${{ hashFiles('**/Cargo.lock') }}
+      - uses: jdx/mise-action@v2
+        with:
+          version: 2025.10.5
+      - name: Install cargo-fuzz
+        run: cargo install cargo-fuzz
+      - name: Install nightly toolchain
+        run: rustup toolchain install nightly --profile minimal
+      - name: Parser fuzz smoke
+        run: mise run fuzz parser -- -runs=1000
+      - name: Matcher fuzz smoke
+        run: mise run fuzz matcher -- -runs=1000

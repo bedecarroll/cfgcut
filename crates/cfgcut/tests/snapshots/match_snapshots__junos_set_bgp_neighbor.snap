@@ -1,0 +1,13 @@
+---
+source: crates/cfgcut/tests/match_snapshots.rs
+expression: snapshot
+---
+input: tests/fixtures/juniper_junos_set/full_lab.set
+match: protocols||bgp||group core||neighbor 10.0.0.2|>>|
+---
+# cfgcut matches for full_lab.set
+set protocols
+set protocols bgp
+set protocols bgp group core
+set protocols bgp group core neighbor 10.0.0.2
+set protocols bgp group core neighbor 10.0.0.2 peer-as 65001

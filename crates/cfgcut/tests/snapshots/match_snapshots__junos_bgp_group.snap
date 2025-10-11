@@ -1,0 +1,18 @@
+---
+source: crates/cfgcut/tests/match_snapshots.rs
+expression: snapshot
+---
+input: tests/fixtures/juniper_junos/full_lab.conf
+match: protocols||bgp||group core|>>|
+---
+## cfgcut matches for full_lab.conf
+protocols {
+  bgp {
+    group core {
+      type external;
+      neighbor 10.0.0.2 {
+        peer-as 65001;
+      }
+    }
+  }
+}

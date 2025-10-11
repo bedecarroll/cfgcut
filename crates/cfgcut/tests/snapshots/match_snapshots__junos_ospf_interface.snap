@@ -1,0 +1,15 @@
+---
+source: crates/cfgcut/tests/match_snapshots.rs
+expression: snapshot
+---
+input: tests/fixtures/juniper_junos/full_lab.conf
+match: protocols||ospf||area 0.0.0.0||interface ge-0/0/0.0
+---
+## cfgcut matches for full_lab.conf
+protocols {
+  ospf {
+    area 0.0.0.0 {
+      interface ge-0/0/0.0;
+    }
+  }
+}

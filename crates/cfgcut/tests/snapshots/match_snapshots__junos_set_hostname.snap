@@ -1,0 +1,10 @@
+---
+source: crates/cfgcut/tests/match_snapshots.rs
+expression: snapshot
+---
+input: tests/fixtures/juniper_junos_set/full_lab.set
+match: system||host-name lab-junos-set
+---
+# cfgcut matches for full_lab.set
+set system
+set system host-name lab-junos-set

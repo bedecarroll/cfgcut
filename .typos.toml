@@ -1,0 +1,11 @@
+[default]
+extend-ignore-words = [
+  "cfgcut",
+  "JunOS",
+  "NXOS",
+  "NAPALM",
+  "PyO3",
+]
+
+[type."*.set"]
+extend-ignore-re = [".*"]

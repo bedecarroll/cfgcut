@@ -1,0 +1,17 @@
+---
+source: crates/cfgcut/tests/match_snapshots.rs
+expression: snapshot
+---
+input: tests/fixtures/juniper_junos_set/full_lab.set
+match: interfaces||ge-0/0/1|>>|
+---
+# cfgcut matches for full_lab.set
+set interfaces
+set interfaces ge-0/0/1
+set interfaces ge-0/0/1 description "user access"
+set interfaces ge-0/0/1 unit 0
+set interfaces ge-0/0/1 unit 0 family ethernet-switching
+set interfaces ge-0/0/1 unit 0 family ethernet-switching vlan
+set interfaces ge-0/0/1 unit 0 family ethernet-switching vlan members
+set interfaces ge-0/0/1 unit 0 family ethernet-switching vlan members users
+set interfaces ge-0/0/1 unit 0 family ethernet-switching vlan members voice

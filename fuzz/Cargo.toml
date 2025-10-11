@@ -1,0 +1,29 @@
+[package]
+name = "cfgcut-fuzz"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[workspace]
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+
+[dependencies.cfgcut]
+path = "../crates/cfgcut"
+features = ["fuzzing"]
+
+[[bin]]
+name = "parser"
+path = "fuzz_targets/parser.rs"
+test = false
+doc = false
+
+[[bin]]
+name = "matcher"
+path = "fuzz_targets/matcher.rs"
+test = false
+doc = false

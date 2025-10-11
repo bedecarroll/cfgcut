@@ -1,0 +1,12 @@
+---
+source: crates/cfgcut/tests/match_snapshots.rs
+expression: snapshot
+---
+input: tests/fixtures/cisco_ios/full_lab.conf
+match: interface GigabitEthernet0/0|>>|
+---
+! cfgcut matches for full_lab.conf
+interface GigabitEthernet0/0
+ description core-uplink
+ ip address 10.0.0.2 255.255.255.252
+ no shutdown

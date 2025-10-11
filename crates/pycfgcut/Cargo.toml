@@ -1,0 +1,14 @@
+[package]
+name = "pycfgcut"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[lib]
+name = "pycfgcut"
+crate-type = ["cdylib"]
+
+[dependencies]
+pyo3 = { version = "0.24", features = ["extension-module"] }
+cfgcut = { path = "../cfgcut", version = "0.1.0" }
+serde_json = "1"

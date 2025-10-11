@@ -1,0 +1,14 @@
+# Cargo/Rust build outputs
+debug/
+target/
+**/*.rs.bk
+*.pdb
+
+# Generated documentation artifacts
+docs/book/
+
+# Fuzzing outputs
+fuzz/artifacts/
+
+# Coverage reports
+target/llvm-cov/

@@ -1,0 +1,85 @@
+# Synthetic snapshot cases maintained in-repo
+[[case]]
+name = "ios_hostname"
+matches = ["hostname lab-edge"]
+input = "tests/fixtures/cisco_ios/full_lab.conf"
+
+[[case]]
+name = "ios_gig0_0_subtree"
+matches = ["interface GigabitEthernet0/0|>>|"]
+input = "tests/fixtures/cisco_ios/full_lab.conf"
+
+[[case]]
+name = "ios_gig0_1_switchport"
+matches = ["interface GigabitEthernet0/1||switchport trunk allowed vlan 10,20,30"]
+input = "tests/fixtures/cisco_ios/full_lab.conf"
+
+[[case]]
+name = "ios_bgp_block"
+matches = ["router bgp 65001|>>|"]
+input = "tests/fixtures/cisco_ios/full_lab.conf"
+
+[[case]]
+name = "ios_policy_map"
+matches = ["policy-map SHAPE|>>|"]
+input = "tests/fixtures/cisco_ios/full_lab.conf"
+
+[[case]]
+name = "ios_vty"
+matches = ["line vty 0 4|>>|"]
+input = "tests/fixtures/cisco_ios/full_lab.conf"
+
+[[case]]
+name = "junos_ge_0_0_0"
+matches = ["interfaces||ge-0/0/0|>>|"]
+input = "tests/fixtures/juniper_junos/full_lab.conf"
+
+[[case]]
+name = "junos_switch_vlan"
+matches = ["interfaces||ge-0/0/1||unit 0||family ethernet-switching||vlan|>>|"]
+input = "tests/fixtures/juniper_junos/full_lab.conf"
+
+[[case]]
+name = "junos_bgp_group"
+matches = ["protocols||bgp||group core|>>|"]
+input = "tests/fixtures/juniper_junos/full_lab.conf"
+
+[[case]]
+name = "junos_system_services"
+matches = ["system||services|>>|"]
+input = "tests/fixtures/juniper_junos/full_lab.conf"
+
+[[case]]
+name = "junos_ospf_interface"
+matches = ["protocols||ospf||area 0.0.0.0||interface ge-0/0/0.0"]
+input = "tests/fixtures/juniper_junos/full_lab.conf"
+
+[[case]]
+name = "junos_set_hostname"
+matches = ["system||host-name lab-junos-set"]
+input = "tests/fixtures/juniper_junos_set/full_lab.set"
+
+[[case]]
+name = "junos_set_ge_0_0_0_addr"
+matches = ["interfaces||ge-0/0/0||unit 0||family inet||address 10.0.0.1/30"]
+input = "tests/fixtures/juniper_junos_set/full_lab.set"
+
+[[case]]
+name = "junos_set_ge_0_0_1_subtree"
+matches = ["interfaces||ge-0/0/1|>>|"]
+input = "tests/fixtures/juniper_junos_set/full_lab.set"
+
+[[case]]
+name = "junos_set_static_route"
+matches = ["routing-options||static||route||192.0.2.0/24|>>|"]
+input = "tests/fixtures/juniper_junos_set/full_lab.set"
+
+[[case]]
+name = "junos_set_bgp_neighbor"
+matches = ["protocols||bgp||group core||neighbor 10.0.0.2|>>|"]
+input = "tests/fixtures/juniper_junos_set/full_lab.set"
+
+[[case]]
+name = "junos_set_firewall_term"
+matches = ["firewall||family inet||filter||ACCESS||term ALLOW-SSH|>>|"]
+input = "tests/fixtures/juniper_junos_set/full_lab.set"

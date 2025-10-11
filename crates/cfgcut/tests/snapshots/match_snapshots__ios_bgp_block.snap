@@ -1,0 +1,15 @@
+---
+source: crates/cfgcut/tests/match_snapshots.rs
+expression: snapshot
+---
+input: tests/fixtures/cisco_ios/full_lab.conf
+match: router bgp 65001|>>|
+---
+! cfgcut matches for full_lab.conf
+router bgp 65001
+ bgp log-neighbor-changes
+ neighbor 10.0.0.1 remote-as 65000
+ address-family ipv4
+  network 10.10.0.0 mask 255.255.0.0
+  neighbor 10.0.0.1 activate
+ exit-address-family
