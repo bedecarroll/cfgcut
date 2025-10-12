@@ -17,7 +17,10 @@ use cfgcut::{
     after_help = "Match segments are separated with '||' and implicitly anchored. Append '|>>|' to include descendant nodes, use '|#|' for comments with -c/--with-comments, and enable -a/--anonymize to scramble sensitive tokens while keeping structure intact.",
     version
 )]
-#[allow(clippy::struct_excessive_bools)]
+#[expect(
+    clippy::struct_excessive_bools,
+    reason = "CLI flags map directly to user-facing switches"
+)]
 struct Cli {
     /// Configuration match expressions to apply, supports hierarchical syntax
     #[arg(
@@ -127,8 +130,7 @@ fn write_tokens(dest: &TokenDestination, tokens: &[TokenRecord]) -> Result<(), C
     match dest {
         TokenDestination::Stdout => {
             for record in tokens {
-                let line = serde_json::to_string(record)
-                    .map_err(|err| CfgcutError::InvalidArguments(err.to_string()))?;
+                let line = serde_json::to_string(record).map_err(CfgcutError::from)?;
                 println!("{line}");
             }
             Ok(())
@@ -139,8 +141,7 @@ fn write_tokens(dest: &TokenDestination, tokens: &[TokenRecord]) -> Result<(), C
                 source,
             })?;
             for record in tokens {
-                let line = serde_json::to_string(record)
-                    .map_err(|err| CfgcutError::InvalidArguments(err.to_string()))?;
+                let line = serde_json::to_string(record).map_err(CfgcutError::from)?;
                 file.write_all(line.as_bytes())
                     .map_err(|source| CfgcutError::Io {
                         path: path.clone(),
@@ -153,8 +154,6 @@ fn write_tokens(dest: &TokenDestination, tokens: &[TokenRecord]) -> Result<(), C
             }
             Ok(())
         }
-        _ => Err(CfgcutError::InvalidArguments(
-            "unsupported token destination".to_string(),
-        )),
+        _ => Err(CfgcutError::UnsupportedTokenDestination),
     }
 }

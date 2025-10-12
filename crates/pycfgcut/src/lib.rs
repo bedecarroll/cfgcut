@@ -11,7 +11,10 @@ use pyo3::types::{PyDict, PyModule};
 
 #[pyfunction]
 #[pyo3(signature = (matches, inputs, with_comments = false, quiet = false, anonymize = false, tokens = false, tokens_out = None))]
-#[allow(clippy::too_many_arguments)]
+#[expect(
+    clippy::too_many_arguments,
+    reason = "Python binding mirrors the CLI surface without breaking parameters"
+)]
 fn run_cfg(
     py: Python<'_>,
     matches: Vec<String>,
@@ -72,7 +75,10 @@ fn run_cfg(
             dict.set_item("stdout", result.stdout)?;
             dict.set_item("matched", result.matched)?;
             dict.set_item("tokens", tokens_to_py(py, &result.tokens)?)?;
-            #[allow(deprecated)]
+            #[expect(
+                deprecated,
+                reason = "pyo3 still relies on IntoPy for PyDict conversions"
+            )]
             {
                 Ok(dict.into_py(py))
             }
@@ -92,7 +98,10 @@ fn tokens_to_py(py: Python<'_>, tokens: &[TokenRecord]) -> PyResult<Vec<PyObject
             dict.set_item("original", record.original.clone())?;
             dict.set_item("anonymized", record.anonymized.clone())?;
             dict.set_item("line", record.line)?;
-            #[allow(deprecated)]
+            #[expect(
+                deprecated,
+                reason = "pyo3 still relies on IntoPy for PyDict conversions"
+            )]
             {
                 Ok(dict.into_py(py))
             }
@@ -109,8 +118,7 @@ fn write_tokens_to_file(path: &PathBuf, tokens: &[TokenRecord]) -> Result<(), Cf
         source,
     })?;
     for record in tokens {
-        let line = serde_json::to_string(record)
-            .map_err(|err| CfgcutError::InvalidArguments(err.to_string()))?;
+        let line = serde_json::to_string(record).map_err(CfgcutError::from)?;
         use std::io::Write;
         file.write_all(line.as_bytes())
             .map_err(|source| CfgcutError::Io {
