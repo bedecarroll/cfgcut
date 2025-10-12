@@ -42,7 +42,10 @@ pub struct TokenCapture {
 }
 
 impl TokenCapture {
-    #[allow(clippy::missing_const_for_fn)]
+    #[expect(
+        clippy::missing_const_for_fn,
+        reason = "constructor requires heap allocation and cannot be const"
+    )]
     pub fn new(kind: TokenKind, original: String, anonymized: Option<String>) -> Self {
         Self {
             kind,
@@ -77,7 +80,10 @@ impl Anonymizer {
         self.scrub_internal(input, Some(sink))
     }
 
-    #[allow(clippy::too_many_lines)]
+    #[expect(
+        clippy::too_many_lines,
+        reason = "token scrubbing logic is intentionally centralized for performance"
+    )]
     fn scrub_internal(&mut self, input: &str, mut sink: Option<&mut Vec<TokenCapture>>) -> String {
         let mut line = input.to_string();
 
@@ -249,7 +255,10 @@ impl Anonymizer {
         original.to_string()
     }
 
-    #[allow(clippy::missing_const_for_fn)]
+    #[expect(
+        clippy::missing_const_for_fn,
+        reason = "generator mutates internal counters on each call"
+    )]
     fn next_ip_octets(&mut self) -> (u8, u8) {
         let idx = self.ip_counter;
         self.ip_counter = self.ip_counter.saturating_add(1);

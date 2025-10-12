@@ -1,3 +1,8 @@
+//! Core library API for parsing and extracting configuration snippets.
+//!
+//! The library exposes [`run`] along with supporting types for configuring a
+//! single invocation.
+
 use std::borrow::Cow;
 use std::collections::{BTreeSet, VecDeque};
 use std::fmt;
@@ -5,7 +10,7 @@ use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
 
-use glob::glob;
+use glob::{PatternError, glob};
 use regex::Regex;
 use serde::Serialize;
 
@@ -17,23 +22,65 @@ use self::dialect::{DialectKind, LineKind, ParsedConfig};
 use anonymize::{Anonymizer, TokenCapture, collect_plain_tokens};
 use inline_match::{InlineMatchParse, parse_inline_matches};
 
+/// Errors that can be returned while executing the cfgcut pipeline.
 #[derive(Debug)]
 #[non_exhaustive]
 pub enum CfgcutError {
+    /// File-system interaction failed for the given path.
     Io {
+        /// The path that triggered the failure.
         path: PathBuf,
+        /// The underlying I/O error.
         source: io::Error,
     },
-    InvalidArguments(String),
+    /// Compilation of a CLI match expression failed.
     Pattern(String, regex::Error),
+    /// Parsing inline match expressions embedded in a configuration file failed.
     InlineMatches {
+        /// The source file containing the inline block.
         path: PathBuf,
+        /// A human-readable error message.
         message: String,
     },
+    /// A regular expression inside an inline block could not be compiled.
     InlinePattern {
+        /// The source file containing the inline block.
         path: PathBuf,
+        /// The invalid pattern fragment.
         pattern: String,
+        /// The underlying regular-expression error.
         source: regex::Error,
+    },
+    /// No input paths were provided to the run request.
+    NoInputPaths,
+    /// A glob pattern could not be parsed.
+    GlobPatternInvalid {
+        /// The glob pattern supplied by the caller.
+        pattern: String,
+        /// The underlying glob parser error.
+        source: PatternError,
+    },
+    /// A glob pattern was valid but matched no files.
+    GlobPatternNoMatches {
+        /// The glob pattern supplied by the caller.
+        pattern: String,
+    },
+    /// No match expressions were provided for the given configuration file.
+    NoPatternsProvided {
+        /// The configuration file missing match expressions.
+        path: PathBuf,
+    },
+    /// A match expression contained no actionable segments.
+    EmptyPattern {
+        /// The raw pattern text supplied by the caller.
+        raw: String,
+    },
+    /// The requested token destination is not supported.
+    UnsupportedTokenDestination,
+    /// Serializing structured output failed.
+    Serialization {
+        /// The underlying serialization error.
+        source: serde_json::Error,
     },
 }
 
@@ -43,7 +90,6 @@ impl fmt::Display for CfgcutError {
             Self::Io { path, source } => {
                 write!(f, "failed to read '{}': {}", path.display(), source)
             }
-            Self::InvalidArguments(msg) => f.write_str(msg),
             Self::Pattern(pattern, err) => {
                 write!(f, "invalid match pattern '{pattern}': {err}")
             }
@@ -67,6 +113,25 @@ impl fmt::Display for CfgcutError {
                     source
                 )
             }
+            Self::NoInputPaths => f.write_str("no input paths provided"),
+            Self::GlobPatternInvalid { pattern, source } => {
+                write!(f, "invalid glob pattern '{pattern}': {source}")
+            }
+            Self::GlobPatternNoMatches { pattern } => {
+                write!(f, "glob pattern '{pattern}' matched no files")
+            }
+            Self::NoPatternsProvided { path } => write!(
+                f,
+                "no match patterns provided via CLI or inline block in '{}'",
+                path.display()
+            ),
+            Self::EmptyPattern { raw } => {
+                write!(f, "match pattern must not be empty (input: '{raw}')")
+            }
+            Self::UnsupportedTokenDestination => f.write_str("unsupported token destination"),
+            Self::Serialization { source } => {
+                write!(f, "failed to serialize token record: {source}")
+            }
         }
     }
 }
@@ -77,11 +142,25 @@ impl std::error::Error for CfgcutError {
             Self::Io { source, .. } => Some(source),
             Self::Pattern(_, err) => Some(err),
             Self::InlinePattern { source, .. } => Some(source),
-            Self::InvalidArguments(_) | Self::InlineMatches { .. } => None,
+            Self::GlobPatternInvalid { source, .. } => Some(source),
+            Self::Serialization { source } => Some(source),
+            Self::InlineMatches { .. }
+            | Self::NoInputPaths
+            | Self::GlobPatternNoMatches { .. }
+            | Self::NoPatternsProvided { .. }
+            | Self::EmptyPattern { .. }
+            | Self::UnsupportedTokenDestination => None,
         }
     }
 }
 
+impl From<serde_json::Error> for CfgcutError {
+    fn from(source: serde_json::Error) -> Self {
+        Self::Serialization { source }
+    }
+}
+
+/// Describes how a single cfgcut invocation should behave.
 #[derive(Debug, Clone)]
 pub struct RunRequest {
     matches: Vec<String>,
@@ -92,42 +171,60 @@ pub struct RunRequest {
     token_output: Option<TokenDestination>,
 }
 
+/// Controls whether comments are included in the rendered output.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum CommentHandling {
+    /// Strip comment-only lines from the results.
     Exclude,
+    /// Emit comment-only lines alongside matched commands.
     Include,
 }
 
+/// Determines how verbose standard output should be.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum OutputMode {
+    /// Emit headings and matched configuration lines.
     Normal,
+    /// Suppress stdout entirely.
     Quiet,
 }
 
+/// Whether anonymization of sensitive tokens is enabled.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Anonymization {
+    /// Emit raw configuration content.
     Disabled,
+    /// Scrub sensitive tokens and optionally capture them for audit use.
     Enabled,
 }
 
+/// Defines where captured token data should be written.
 #[derive(Debug, Clone)]
 #[non_exhaustive]
 pub enum TokenDestination {
+    /// Emit each token record as JSON to stdout.
     Stdout,
+    /// Append token records as JSON lines to the provided file.
     File(PathBuf),
 }
 
+/// Enumerates the types of sensitive values that can be anonymized.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 #[non_exhaustive]
 #[serde(rename_all = "snake_case")]
 pub enum TokenKind {
+    /// Username or account identifier.
     Username,
+    /// A secret such as a password or shared key.
     Secret,
+    /// An autonomous system number.
     Asn,
+    /// An IPv4 address.
     Ip,
 }
 
 impl TokenKind {
+    /// Returns the canonical string representation for a token kind.
     #[must_use]
     pub const fn as_str(self) -> &'static str {
         match self {
@@ -139,61 +236,81 @@ impl TokenKind {
     }
 }
 
+/// Captures anonymized token information emitted during a run.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct TokenRecord {
+    /// The dialect of configuration from which the token originated.
     pub dialect: DialectKind,
+    /// The hierarchical path to the matched command.
     pub path: Vec<String>,
+    /// The type of token that was captured.
     pub kind: TokenKind,
+    /// The original text discovered in the configuration.
     pub original: String,
+    /// The anonymized replacement, if anonymization was enabled.
     pub anonymized: Option<String>,
+    /// The line number in the source file.
     pub line: usize,
 }
 
+/// Describes the outcome of executing [`run`].
 #[derive(Debug, Default, PartialEq, Eq)]
 pub struct RunOutput {
+    /// Whether any patterns matched across the provided inputs.
     pub matched: bool,
+    /// The rendered configuration output destined for stdout.
     pub stdout: String,
+    /// Any token records collected during anonymization.
     pub tokens: Vec<TokenRecord>,
+    /// Warnings generated during processing, such as missing inline patterns.
     pub warnings: Vec<String>,
 }
 
 impl RunRequest {
+    /// Create a builder used to construct a [`RunRequest`].
     #[must_use]
     pub fn builder() -> RunRequestBuilder {
         RunRequestBuilder::default()
     }
 
+    /// The destination used to emit captured token data, if configured.
     #[must_use]
     pub fn token_output(&self) -> Option<&TokenDestination> {
         self.token_output.as_ref()
     }
 
+    /// The CLI match expressions that should be applied to each input file.
     #[must_use]
     pub fn matches(&self) -> &[String] {
         &self.matches
     }
 
+    /// The input paths gathered for this run.
     #[must_use]
     pub fn inputs(&self) -> &[PathBuf] {
         &self.inputs
     }
 
+    /// Whether commands originating from comments should be included in output.
     #[must_use]
     pub fn comment_handling(&self) -> CommentHandling {
         self.comment_handling
     }
 
+    /// The style of stdout emission for the current run.
     #[must_use]
     pub fn output_mode(&self) -> OutputMode {
         self.output_mode
     }
 
+    /// Whether sensitive values should be anonymized while rendering output.
     #[must_use]
     pub fn anonymization(&self) -> Anonymization {
         self.anonymization
     }
 }
 
+/// Builder for [`RunRequest`].
 #[derive(Debug, Clone)]
 pub struct RunRequestBuilder {
     matches: Vec<String>,
@@ -218,42 +335,49 @@ impl Default for RunRequestBuilder {
 }
 
 impl RunRequestBuilder {
+    /// Replace any existing CLI match expressions.
     #[must_use]
     pub fn matches(mut self, matches: Vec<String>) -> Self {
         self.matches = matches;
         self
     }
 
+    /// Configure how comments should be treated in the rendered output.
     #[must_use]
     pub fn comment_handling(mut self, handling: CommentHandling) -> Self {
         self.comment_handling = handling;
         self
     }
 
+    /// Configure how verbose stdout should be during execution.
     #[must_use]
     pub fn output_mode(mut self, mode: OutputMode) -> Self {
         self.output_mode = mode;
         self
     }
 
+    /// Enable or disable token anonymization in the rendered output.
     #[must_use]
     pub fn anonymization(mut self, anonymization: Anonymization) -> Self {
         self.anonymization = anonymization;
         self
     }
 
+    /// Provide the inputs that cfgcut should scan.
     #[must_use]
     pub fn inputs(mut self, inputs: Vec<PathBuf>) -> Self {
         self.inputs = inputs;
         self
     }
 
+    /// Configure where token data should be written.
     #[must_use]
     pub fn token_output(mut self, token_output: Option<TokenDestination>) -> Self {
         self.token_output = token_output;
         self
     }
 
+    /// Finalize the builder and produce a [`RunRequest`].
     #[must_use]
     pub fn build(self) -> RunRequest {
         RunRequest {
@@ -321,11 +445,8 @@ fn resolve_patterns<'a>(
         return Ok((Cow::Borrowed(patterns), warning));
     }
 
-    let inline_strings = inline_strings.ok_or_else(|| {
-        CfgcutError::InvalidArguments(format!(
-            "no match patterns provided via CLI or inline block in '{}'.",
-            path.display()
-        ))
+    let inline_strings = inline_strings.ok_or_else(|| CfgcutError::NoPatternsProvided {
+        path: path.to_path_buf(),
     })?;
 
     let compiled = compile_inline_patterns(path, inline_strings)?;
@@ -347,10 +468,14 @@ fn compile_inline_patterns(
                     source,
                 });
             }
-            Err(CfgcutError::InvalidArguments(message)) => {
+            Err(CfgcutError::EmptyPattern { raw }) => {
                 return Err(CfgcutError::InlineMatches {
                     path: path.to_path_buf(),
-                    message,
+                    message: if raw.trim().is_empty() {
+                        "inline match pattern is empty".to_string()
+                    } else {
+                        format!("inline match pattern is empty: '{raw}'")
+                    },
                 });
             }
             Err(err) => return Err(err),
@@ -362,8 +487,9 @@ fn compile_inline_patterns(
 /// Execute `cfgcut` over the provided inputs.
 ///
 /// # Errors
-/// Returns an error when match patterns are invalid, input paths cannot be
-/// resolved, or files cannot be read from disk.
+/// Returns an error when input files cannot be read, when patterns fail to
+/// compile, when glob arguments are invalid, or when outputs cannot be
+/// serialized.
 pub fn run(request: &RunRequest) -> Result<RunOutput, CfgcutError> {
     let files = collect_files(&request.inputs)?;
     let cli_patterns = compile_cli_patterns(&request.matches)?;
@@ -448,17 +574,16 @@ pub fn run(request: &RunRequest) -> Result<RunOutput, CfgcutError> {
 
 fn collect_files(inputs: &[PathBuf]) -> Result<Vec<PathBuf>, CfgcutError> {
     if inputs.is_empty() {
-        return Err(CfgcutError::InvalidArguments(
-            "no input paths provided".to_string(),
-        ));
+        return Err(CfgcutError::NoInputPaths);
     }
 
     let mut files = Vec::new();
     for input in inputs {
         if let Some(pattern) = glob_pattern(input) {
             let mut matched_any = false;
-            let paths = glob(&pattern).map_err(|err| {
-                CfgcutError::InvalidArguments(format!("invalid glob pattern '{pattern}': {err}"))
+            let paths = glob(&pattern).map_err(|err| CfgcutError::GlobPatternInvalid {
+                pattern: pattern.clone(),
+                source: err,
             })?;
 
             for entry in paths {
@@ -482,9 +607,9 @@ fn collect_files(inputs: &[PathBuf]) -> Result<Vec<PathBuf>, CfgcutError> {
             }
 
             if !matched_any {
-                return Err(CfgcutError::InvalidArguments(format!(
-                    "glob pattern '{pattern}' matched no files"
-                )));
+                return Err(CfgcutError::GlobPatternNoMatches {
+                    pattern: pattern.clone(),
+                });
             }
 
             continue;
@@ -591,9 +716,9 @@ impl Pattern {
         }
 
         if segments.is_empty() {
-            return Err(CfgcutError::InvalidArguments(
-                "match patterns must not be empty".to_string(),
-            ));
+            return Err(CfgcutError::EmptyPattern {
+                raw: raw.to_string(),
+            });
         }
 
         Ok(Self { segments })
@@ -718,7 +843,10 @@ struct MatchAccumulator<'a> {
 }
 
 impl<'a> MatchAccumulator<'a> {
-    #[allow(clippy::missing_const_for_fn)]
+    #[expect(
+        clippy::missing_const_for_fn,
+        reason = "const constructors cannot accept runtime borrow parameters"
+    )]
     fn new(config: &'a ParsedConfig) -> Self {
         Self {
             config,
