@@ -7,5 +7,5 @@ extend-ignore-words = [
   "PyO3",
 ]
 
-[type."*.set"]
-extend-ignore-re = [".*"]
+[files]
+extend-exclude = ["*.set"]

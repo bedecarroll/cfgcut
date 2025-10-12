@@ -1,5 +1,3 @@
-#![warn(clippy::all, clippy::pedantic, clippy::nursery)]
-
 use std::borrow::Cow;
 use std::collections::{BTreeSet, VecDeque};
 use std::fmt;
@@ -20,6 +18,7 @@ use anonymize::{Anonymizer, TokenCapture, collect_plain_tokens};
 use inline_match::{InlineMatchParse, parse_inline_matches};
 
 #[derive(Debug)]
+#[non_exhaustive]
 pub enum CfgcutError {
     Io {
         path: PathBuf,
@@ -85,12 +84,12 @@ impl std::error::Error for CfgcutError {
 
 #[derive(Debug, Clone)]
 pub struct RunRequest {
-    pub matches: Vec<String>,
-    pub comment_handling: CommentHandling,
-    pub output_mode: OutputMode,
-    pub anonymization: Anonymization,
-    pub inputs: Vec<PathBuf>,
-    pub token_output: Option<TokenDestination>,
+    matches: Vec<String>,
+    comment_handling: CommentHandling,
+    output_mode: OutputMode,
+    anonymization: Anonymization,
+    inputs: Vec<PathBuf>,
+    token_output: Option<TokenDestination>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -112,12 +111,14 @@ pub enum Anonymization {
 }
 
 #[derive(Debug, Clone)]
+#[non_exhaustive]
 pub enum TokenDestination {
     Stdout,
     File(PathBuf),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[non_exhaustive]
 #[serde(rename_all = "snake_case")]
 pub enum TokenKind {
     Username,
@@ -154,6 +155,116 @@ pub struct RunOutput {
     pub stdout: String,
     pub tokens: Vec<TokenRecord>,
     pub warnings: Vec<String>,
+}
+
+impl RunRequest {
+    #[must_use]
+    pub fn builder() -> RunRequestBuilder {
+        RunRequestBuilder::default()
+    }
+
+    #[must_use]
+    pub fn token_output(&self) -> Option<&TokenDestination> {
+        self.token_output.as_ref()
+    }
+
+    #[must_use]
+    pub fn matches(&self) -> &[String] {
+        &self.matches
+    }
+
+    #[must_use]
+    pub fn inputs(&self) -> &[PathBuf] {
+        &self.inputs
+    }
+
+    #[must_use]
+    pub fn comment_handling(&self) -> CommentHandling {
+        self.comment_handling
+    }
+
+    #[must_use]
+    pub fn output_mode(&self) -> OutputMode {
+        self.output_mode
+    }
+
+    #[must_use]
+    pub fn anonymization(&self) -> Anonymization {
+        self.anonymization
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct RunRequestBuilder {
+    matches: Vec<String>,
+    comment_handling: CommentHandling,
+    output_mode: OutputMode,
+    anonymization: Anonymization,
+    inputs: Vec<PathBuf>,
+    token_output: Option<TokenDestination>,
+}
+
+impl Default for RunRequestBuilder {
+    fn default() -> Self {
+        Self {
+            matches: Vec::new(),
+            comment_handling: CommentHandling::Exclude,
+            output_mode: OutputMode::Normal,
+            anonymization: Anonymization::Disabled,
+            inputs: Vec::new(),
+            token_output: None,
+        }
+    }
+}
+
+impl RunRequestBuilder {
+    #[must_use]
+    pub fn matches(mut self, matches: Vec<String>) -> Self {
+        self.matches = matches;
+        self
+    }
+
+    #[must_use]
+    pub fn comment_handling(mut self, handling: CommentHandling) -> Self {
+        self.comment_handling = handling;
+        self
+    }
+
+    #[must_use]
+    pub fn output_mode(mut self, mode: OutputMode) -> Self {
+        self.output_mode = mode;
+        self
+    }
+
+    #[must_use]
+    pub fn anonymization(mut self, anonymization: Anonymization) -> Self {
+        self.anonymization = anonymization;
+        self
+    }
+
+    #[must_use]
+    pub fn inputs(mut self, inputs: Vec<PathBuf>) -> Self {
+        self.inputs = inputs;
+        self
+    }
+
+    #[must_use]
+    pub fn token_output(mut self, token_output: Option<TokenDestination>) -> Self {
+        self.token_output = token_output;
+        self
+    }
+
+    #[must_use]
+    pub fn build(self) -> RunRequest {
+        RunRequest {
+            matches: self.matches,
+            comment_handling: self.comment_handling,
+            output_mode: self.output_mode,
+            anonymization: self.anonymization,
+            inputs: self.inputs,
+            token_output: self.token_output,
+        }
+    }
 }
 
 fn compile_cli_patterns(matches: &[String]) -> Result<Option<Vec<Pattern>>, CfgcutError> {

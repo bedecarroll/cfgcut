@@ -1,5 +1,6 @@
 [workspace]
 members = ["crates/cfgcut", "crates/pycfgcut"]
+default-members = ["crates/cfgcut"]
 resolver = "2"
 
 [workspace.package]
@@ -8,3 +9,29 @@ rust-version = "1.90"
 license = "MIT"
 repository = "https://github.com/bedecarroll/cfgcut"
 homepage = "https://cfgcut.bedecarroll.com"
+
+[workspace.dependencies]
+assert_cmd = "2"
+clap = { version = "4.5", features = ["derive"] }
+criterion = { version = "0.7", features = ["html_reports"] }
+glob = "0.3"
+insta = { version = "1", features = ["yaml"] }
+pyo3 = { version = "0.24", default-features = false }
+predicates = "3"
+regex = "1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tempfile = "3"
+toml = "0.8"
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+missing_docs = "warn"
+
+[workspace.lints.rustdoc]
+broken_intra_doc_links = "deny"
+
+[workspace.lints.clippy]
+all = "warn"
+pedantic = "warn"
+nursery = "warn"
