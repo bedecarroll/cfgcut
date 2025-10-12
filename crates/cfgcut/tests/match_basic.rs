@@ -33,15 +33,11 @@ fn ios_full_interface_block() {
     let header_line = header("!", &path);
 
     let mut cmd = cfgcut_cmd();
-    cmd.args([
-        "-m",
-        "interface GigabitEthernet1|>>|",
-        &path,
-    ])
-    .assert()
-    .success()
-    .stdout(predicate::str::contains(&header_line))
-    .stdout(predicate::str::contains(expected));
+    cmd.args(["-m", "interface GigabitEthernet1|>>|", &path])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains(&header_line))
+        .stdout(predicate::str::contains(expected));
 }
 
 #[test]
@@ -50,15 +46,13 @@ fn ios_single_line_without_descend() {
     let header_line = header("!", &path);
     let expected_body = "interface GigabitEthernet1\n";
     let mut cmd = cfgcut_cmd();
-    cmd.args([
-        "-m",
-        "interface GigabitEthernet1",
-        &path,
-    ])
-    .assert()
-    .success()
-    .stdout(predicate::str::contains(&header_line))
-    .stdout(predicate::str::diff(format!("{header_line}\n{expected_body}")));
+    cmd.args(["-m", "interface GigabitEthernet1", &path])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains(&header_line))
+        .stdout(predicate::str::diff(format!(
+            "{header_line}\n{expected_body}"
+        )));
 }
 
 #[test]
@@ -68,15 +62,11 @@ fn ios_descendant_match_includes_context() {
     let header_line = header("!", &path);
 
     let mut cmd = cfgcut_cmd();
-    cmd.args([
-        "-m",
-        "interface GigabitEthernet1||ip address .*",
-        &path,
-    ])
-    .assert()
-    .success()
-    .stdout(predicate::str::contains(&header_line))
-    .stdout(predicate::str::contains(expected));
+    cmd.args(["-m", "interface GigabitEthernet1||ip address .*", &path])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains(&header_line))
+        .stdout(predicate::str::contains(expected));
 }
 
 #[test]
@@ -84,31 +74,22 @@ fn nxos_interface_match_includes_children() {
     let path = fixture_path("cisco_nxos/sample.conf");
     let header_line = header("!", &path);
     let mut cmd = cfgcut_cmd();
-    cmd.args([
-        "-m",
-        "interface Ethernet1/1|>>|",
-        &path,
-    ])
-    .assert()
-    .success()
-    .stdout(predicate::str::contains(&header_line))
-    .stdout(predicate::str::contains("interface Ethernet1/1"))
-    .stdout(predicate::str::contains("no shutdown"));
+    cmd.args(["-m", "interface Ethernet1/1|>>|", &path])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains(&header_line))
+        .stdout(predicate::str::contains("interface Ethernet1/1"))
+        .stdout(predicate::str::contains("no shutdown"));
 }
 
 #[test]
 fn quiet_mode_produces_no_output() {
     let path = fixture_path("cisco_ios/sample.conf");
     let mut cmd = cfgcut_cmd();
-    cmd.args([
-        "-q",
-        "-m",
-        "interface GigabitEthernet1",
-        &path,
-    ])
-    .assert()
-    .success()
-    .stdout(predicate::str::is_empty());
+    cmd.args(["-q", "-m", "interface GigabitEthernet1", &path])
+        .assert()
+        .success()
+        .stdout(predicate::str::is_empty());
 }
 
 #[test]
@@ -129,15 +110,11 @@ fn ios_hostname_with_route_map_set() {
     let path = fixture_path("cisco_ios/route_map_set.conf");
     let header_line = header("!", &path);
     let mut cmd = cfgcut_cmd();
-    cmd.args([
-        "-m",
-        "hostname .*",
-        &path,
-    ])
-    .assert()
-    .success()
-    .stdout(predicate::str::contains(&header_line))
-    .stdout(predicate::str::contains("hostname demo-ios-set"));
+    cmd.args(["-m", "hostname .*", &path])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains(&header_line))
+        .stdout(predicate::str::contains("hostname demo-ios-set"));
 }
 
 #[test]
@@ -145,13 +122,9 @@ fn eos_hostname_with_route_map_set() {
     let path = fixture_path("arista_eos/route_map_set.conf");
     let header_line = header("!", &path);
     let mut cmd = cfgcut_cmd();
-    cmd.args([
-        "-m",
-        "hostname .*",
-        &path,
-    ])
-    .assert()
-    .success()
-    .stdout(predicate::str::contains(&header_line))
-    .stdout(predicate::str::contains("hostname demo-eos-set"));
+    cmd.args(["-m", "hostname .*", &path])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains(&header_line))
+        .stdout(predicate::str::contains("hostname demo-eos-set"));
 }

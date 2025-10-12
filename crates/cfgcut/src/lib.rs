@@ -309,11 +309,9 @@ pub fn run(request: &RunRequest) -> Result<RunOutput, CfgcutError> {
                     output.push('\n');
                 }
                 let label = file_label(&path);
-                output.push_str(&format!(
-                    "{} cfgcut matches for {}",
-                    comment_marker_for(dialect_kind),
-                    label
-                ));
+                output.push_str(comment_marker_for(dialect_kind));
+                output.push_str(" cfgcut matches for ");
+                output.push_str(&label);
                 output.push('\n');
                 output.push_str(&rendered);
                 if !rendered.ends_with('\n') {
@@ -321,10 +319,7 @@ pub fn run(request: &RunRequest) -> Result<RunOutput, CfgcutError> {
                 }
             }
         } else {
-            warnings.push(format!(
-                "warning: no matches found in {}",
-                path.display()
-            ));
+            warnings.push(format!("warning: no matches found in {}", path.display()));
         }
 
         if let Some(accumulator) = token_accumulator {
@@ -401,7 +396,7 @@ fn collect_files(inputs: &[PathBuf]) -> Result<Vec<PathBuf>, CfgcutError> {
     Ok(files)
 }
 
-fn comment_marker_for(dialect: DialectKind) -> &'static str {
+const fn comment_marker_for(dialect: DialectKind) -> &'static str {
     match dialect {
         DialectKind::CiscoIos | DialectKind::CiscoNxos | DialectKind::AristaEos => "!",
         DialectKind::JuniperJunos => "##",
@@ -410,9 +405,10 @@ fn comment_marker_for(dialect: DialectKind) -> &'static str {
 }
 
 fn file_label(path: &Path) -> String {
-    path.file_name()
-        .map(|name| name.to_string_lossy().into_owned())
-        .unwrap_or_else(|| path.display().to_string())
+    path.file_name().map_or_else(
+        || path.display().to_string(),
+        |name| name.to_string_lossy().into_owned(),
+    )
 }
 
 fn glob_pattern(path: &Path) -> Option<String> {
