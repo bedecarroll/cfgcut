@@ -19,6 +19,18 @@ cargo nextest run --workspace --all-targets --exclude pycfgcut
 cargo test --doc --workspace --exclude pycfgcut
 '"""]
 
+[tasks.pytest]
+description = "Build the Python extension and run pytest coverage"
+run = ["""bash -lc 'set -euo pipefail
+if ! command -v maturin >/dev/null 2>&1; then
+  echo "maturin not installed. Install maturin>=1.6 to build pycfgcut." >&2
+  exit 1
+fi
+python -c "import pytest" >/dev/null 2>&1 || { echo "pytest not installed. Install pytest to run Python tests." >&2; exit 1; }
+maturin develop --manifest-path crates/pycfgcut/Cargo.toml --release
+pytest crates/pycfgcut/tests
+'"""]
+
 [tasks.deny]
 description = "Audit dependencies with cargo-deny when available"
 run = ["""bash -lc 'if command -v cargo-deny >/dev/null 2>&1; then
@@ -85,6 +97,7 @@ run = [
   "mise run fmt",
   "mise run clippy",
   "mise run test",
+  "mise run pytest",
   "mise run deny",
   "mise run typos",
   "mise run vet",

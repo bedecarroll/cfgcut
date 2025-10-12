@@ -133,55 +133,11 @@ fn write_tokens_to_file(path: &PathBuf, tokens: &[TokenRecord]) -> Result<(), Cf
     Ok(())
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use pyo3::types::PyDict;
-
-    fn fixture_path(rel: &str) -> String {
-        PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-            .join("../../tests/fixtures")
-            .join(rel)
-            .to_string_lossy()
-            .into_owned()
-    }
-
-    #[test]
-    fn run_cfg_smoke_test() {
-        pyo3::prepare_freethreaded_python();
-        Python::with_gil(|py| {
-            let result = run_cfg(
-                py,
-                vec!["interfaces|>>|".to_string()],
-                vec![fixture_path("juniper_junos/sample.conf")],
-                false,
-                false,
-                false,
-                false,
-                None,
-            )
-            .expect("run_cfg succeeds");
-
-            let dict = result
-                .bind(py)
-                .downcast::<PyDict>()
-                .expect("result converts to dictionary");
-            let matched = dict
-                .get_item("matched")
-                .expect("matched lookup succeeded")
-                .expect("matched key exists")
-                .extract::<bool>()
-                .expect("matched is boolean");
-            assert!(matched);
-        });
-    }
-}
-
 #[pymodule]
 fn pycfgcut(_py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(run_cfg, m)?)?;
     let version = env!("CARGO_PKG_VERSION");
     m.add("__version__", version)?;
-    m.add("__all__", vec!["run_cfg"])?;
+    m.add("__all__", vec!["run_cfg", "__version__"])?;
     Ok(())
 }

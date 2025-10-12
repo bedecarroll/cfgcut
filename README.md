@@ -89,9 +89,15 @@ The CLI keeps parent blocks in the output so pasted snippets remain valid config
 - `-a` / `--anonymize` swaps usernames, passwords, ASNs, and IPv4 addresses with deterministic placeholders so you can share snippets safely.
 - `--tokens` emits newline-delimited JSON describing each sensitive token; pair with `--tokens-out <FILE>` to write them directly to disk for follow-up processing.
 
-## Python bindings (work in progress)
+## Python bindings
 
-A PyO3-based module (`pycfgcut`) mirrors the CLI surface. You can build it locally today with `maturin develop`, but prebuilt wheels are not yet published. Packaging plans and API details live in the mdBook.
+Install the matching Python module with:
+
+```bash
+pip install pycfgcut
+```
+
+The package bundles the same matcher surface as the CLI so automation pipelines can stay in Python once the matches are defined. Refer to the mdBook for API details and release support guarantees.
 
 ## Learn more
 

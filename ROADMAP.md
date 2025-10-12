@@ -16,7 +16,7 @@
 - Track CI runtimes and break out `cargo deny`/`cargo fuzz` installs into a cached tool image if necessary.
 
 ## Future enhancements (Phase 2+)
-- Publish `pycfgcut` wheels (maturin/PyPI) and stabilise the Python API.
+- Add typing stubs and high-level helpers to `pycfgcut` once user feedback arrives.
 - Expose streaming/zero-copy parsing options for large configs and add corresponding Criterion benches.
 - Support additional dialects (NX-OS variants, Junos `set` extras, vendor XML exports) once high-confidence fixtures land.
 - Extend token extraction with custom token classes and user-defined scrubbing policies.
