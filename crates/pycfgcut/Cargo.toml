@@ -1,6 +1,6 @@
 [package]
 name = "pycfgcut"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2024"
 publish = false
 
@@ -9,6 +9,6 @@ name = "pycfgcut"
 crate-type = ["cdylib"]
 
 [dependencies]
-pyo3 = { version = "0.24", features = ["extension-module"] }
-cfgcut = { path = "../cfgcut", version = "0.1.0" }
-serde_json = "1"
+pyo3 = { workspace = true, features = ["extension-module", "abi3-py39", "macros"] }
+cfgcut = { path = "../cfgcut", version = "0.2.0" }
+serde_json = { workspace = true }

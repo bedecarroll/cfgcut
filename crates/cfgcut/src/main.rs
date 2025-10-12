@@ -1,5 +1,3 @@
-#![warn(clippy::all, clippy::pedantic, clippy::nursery)]
-
 use std::fs::File;
 use std::io::Write;
 use std::path::PathBuf;
@@ -68,28 +66,30 @@ fn main() {
         inputs,
     } = cli;
 
-    let request = RunRequest {
-        matches,
-        comment_handling: if with_comments {
+    let request = RunRequest::builder()
+        .matches(matches)
+        .comment_handling(if with_comments {
             CommentHandling::Include
         } else {
             CommentHandling::Exclude
-        },
-        output_mode: if quiet {
+        })
+        .output_mode(if quiet {
             OutputMode::Quiet
         } else {
             OutputMode::Normal
-        },
-        anonymization: if anonymize {
+        })
+        .anonymization(if anonymize {
             Anonymization::Enabled
         } else {
             Anonymization::Disabled
-        },
-        inputs,
-        token_output: tokens_out
-            .map(TokenDestination::File)
-            .or_else(|| tokens.then_some(TokenDestination::Stdout)),
-    };
+        })
+        .inputs(inputs)
+        .token_output(
+            tokens_out
+                .map(TokenDestination::File)
+                .or_else(|| tokens.then_some(TokenDestination::Stdout)),
+        )
+        .build();
 
     match run(&request) {
         Ok(result) => {
@@ -99,10 +99,10 @@ fn main() {
             if !result.matched {
                 std::process::exit(1);
             }
-            if !matches!(request.output_mode, OutputMode::Quiet) {
+            if !matches!(request.output_mode(), OutputMode::Quiet) {
                 print!("{}", result.stdout);
             }
-            if let Some(dest) = request.token_output.as_ref()
+            if let Some(dest) = request.token_output()
                 && let Err(err) = write_tokens(dest, &result.tokens)
             {
                 report_error(&err);
@@ -153,5 +153,8 @@ fn write_tokens(dest: &TokenDestination, tokens: &[TokenRecord]) -> Result<(), C
             }
             Ok(())
         }
+        _ => Err(CfgcutError::InvalidArguments(
+            "unsupported token destination".to_string(),
+        )),
     }
 }

@@ -13,14 +13,13 @@ fn bench_ios_match(c: &mut Criterion) {
     let path = fixture_path("cisco_ios/sample.conf");
     c.bench_function("ios_interface_match", |b| {
         b.iter(|| {
-            let request = RunRequest {
-                matches: vec!["interface GigabitEthernet1|>>|".to_string()],
-                comment_handling: CommentHandling::Exclude,
-                output_mode: OutputMode::Quiet,
-                anonymization: Anonymization::Disabled,
-                inputs: vec![path.clone()],
-                token_output: None,
-            };
+            let request = RunRequest::builder()
+                .matches(vec!["interface GigabitEthernet1|>>|".to_string()])
+                .comment_handling(CommentHandling::Exclude)
+                .output_mode(OutputMode::Quiet)
+                .anonymization(Anonymization::Disabled)
+                .inputs(vec![path.clone()])
+                .build();
             let result = run(&request).expect("run succeeds");
             assert!(result.matched);
         });
@@ -31,14 +30,13 @@ fn bench_junos_match(c: &mut Criterion) {
     let path = fixture_path("juniper_junos/sample.conf");
     c.bench_function("junos_interfaces_subtree", |b| {
         b.iter(|| {
-            let request = RunRequest {
-                matches: vec!["interfaces|>>|".to_string()],
-                comment_handling: CommentHandling::Exclude,
-                output_mode: OutputMode::Quiet,
-                anonymization: Anonymization::Disabled,
-                inputs: vec![path.clone()],
-                token_output: None,
-            };
+            let request = RunRequest::builder()
+                .matches(vec!["interfaces|>>|".to_string()])
+                .comment_handling(CommentHandling::Exclude)
+                .output_mode(OutputMode::Quiet)
+                .anonymization(Anonymization::Disabled)
+                .inputs(vec![path.clone()])
+                .build();
             let result = run(&request).expect("run succeeds");
             assert!(result.matched);
         });

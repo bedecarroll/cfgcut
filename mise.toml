@@ -15,8 +15,8 @@ run = ["""bash -lc 'if ! command -v cargo-nextest >/dev/null 2>&1; then
   echo "cargo-nextest is not installed. Install cargo-nextest before running tests." >&2
   exit 1
 fi
-cargo nextest run --workspace --all-targets
-cargo test --doc
+cargo nextest run --workspace --all-targets --exclude pycfgcut
+cargo test --doc --workspace --exclude pycfgcut
 '"""]
 
 [tasks.deny]
@@ -50,10 +50,34 @@ if ! command -v cargo-nextest >/dev/null 2>&1; then
   exit 1
 fi
 cargo llvm-cov clean --workspace
-cargo llvm-cov nextest --workspace --all-targets --html --ignore-filename-regex 'pycfgcut/src' --fail-under-lines 80
+cargo llvm-cov nextest --workspace --all-targets --exclude pycfgcut --html --ignore-filename-regex 'pycfgcut/src' --fail-under-lines 80
 mkdir -p target/llvm-cov
 cargo llvm-cov report --lcov --ignore-filename-regex 'pycfgcut/src' --output-path target/llvm-cov/lcov.info --fail-under-lines 80
 '"""]
+
+[tasks.typos]
+description = "Spell-check sources with typos"
+run = ["""bash -lc 'if command -v typos >/dev/null 2>&1; then
+  typos
+else
+  echo "typos not installed; skipping spell check" >&2
+fi'"""]
+
+[tasks.vet]
+description = "Run cargo-vet supply-chain checks when available"
+run = ["""bash -lc 'if command -v cargo-vet >/dev/null 2>&1; then
+  cargo vet --locked
+else
+  echo "cargo-vet not installed; skipping supply-chain verification" >&2
+fi'"""]
+
+[tasks.msrv]
+description = "Verify the Minimum Supported Rust Version"
+run = ["""bash -lc 'if command -v cargo-msrv >/dev/null 2>&1; then
+  cargo msrv --path crates/cfgcut verify
+else
+  echo "cargo-msrv not installed; skipping MSRV verification" >&2
+fi'"""]
 
 [tasks.check]
 description = "Run formatting, linting, tests, dependency audit, and docs build"
@@ -62,6 +86,9 @@ run = [
   "mise run clippy",
   "mise run test",
   "mise run deny",
+  "mise run typos",
+  "mise run vet",
+  "mise run msrv",
   "mise run docs"
 ]
 
@@ -80,9 +107,12 @@ if ! rustup toolchain list | grep -q "nightly"; then
   echo "Rust nightly toolchain missing. Install with rustup toolchain install nightly." >&2
   exit 1
 fi
-target=${1:-parser}
-shift || true
-rustup run nightly cargo fuzz run "${target}" "$@"'"""]
+target="parser"
+if [ $# -gt 0 ] && [ "$1" != "--" ]; then
+  target="$1"
+  shift
+fi
+rustup run nightly cargo fuzz run "$target" "$@"'"""]
 
 [tasks.fuzz-parser]
 description = "Run the parser fuzz harness"

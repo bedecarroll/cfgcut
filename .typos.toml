@@ -1,11 +1,9 @@
-[default]
-extend-ignore-words = [
-  "cfgcut",
-  "JunOS",
-  "NXOS",
-  "NAPALM",
-  "PyO3",
-]
+[default.extend-words]
+cfgcut = "cfgcut"
+"JunOS" = "JunOS"
+"NXOS" = "NXOS"
+"NAPALM" = "NAPALM"
+"PyO3" = "PyO3"
 
-[type."*.set"]
-extend-ignore-re = [".*"]
+[files]
+extend-exclude = ["*.set"]
