@@ -107,9 +107,20 @@ if ! rustup toolchain list | grep -q "nightly"; then
   echo "Rust nightly toolchain missing. Install with rustup toolchain install nightly." >&2
   exit 1
 fi
-target=${1:-parser}
-shift || true
-rustup run nightly cargo fuzz run "${target}" "$@"'"""]
+args=("$@")
+target="parser"
+case "$0" in
+  bash|-bash|sh|-sh)
+    if [ ${#args[@]} -gt 0 ] && [ "${args[0]}" != "--" ]; then
+      target="${args[0]}"
+      args=("${args[@]:1}")
+    fi
+    ;;
+  *)
+    target="$0"
+    ;;
+esac
+rustup run nightly cargo fuzz run "${target}" "${args[@]}"'"""]
 
 [tasks.fuzz-parser]
 description = "Run the parser fuzz harness"
