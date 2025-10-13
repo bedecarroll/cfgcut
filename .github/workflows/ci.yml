@@ -37,6 +37,13 @@ jobs:
             cargo-vet,
             cargo-msrv,
             typos
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install Python tooling
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install maturin pytest
       - name: Run checks
         run: mise run check
       - name: Coverage report
