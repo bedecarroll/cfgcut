@@ -22,11 +22,10 @@ cargo test --doc --workspace --exclude pycfgcut
 [tasks.pytest]
 description = "Build the Python extension and run pytest coverage"
 run = ["""bash -lc 'set -euo pipefail
-if ! command -v maturin >/dev/null 2>&1; then
-  echo "maturin not installed. Install maturin>=1.6 to build pycfgcut." >&2
-  exit 1
-fi
-python -c "import pytest" >/dev/null 2>&1 || { echo "pytest not installed. Install pytest to run Python tests." >&2; exit 1; }
+python -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install maturin pytest
 maturin develop --manifest-path crates/pycfgcut/Cargo.toml --release
 pytest crates/pycfgcut/tests
 '"""]
