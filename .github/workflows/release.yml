@@ -72,7 +72,7 @@ jobs:
         include:
           - label: linux-x86_64
             os: ubuntu-latest
-            python-version: '3.14'
+            python-version: '3.12'
             python-arch: x64
             rust-target: ''
             build-args: ''
@@ -80,15 +80,15 @@ jobs:
             artifact-name: wheels-linux-x86_64
           - label: macos-aarch64
             os: macos-14
-            python-version: '3.14'
+            python-version: '3.12'
             python-arch: arm64
             rust-target: ''
             build-args: ''
             produce-sdist: false
             artifact-name: wheels-macos-aarch64
           - label: macos-x86_64
-            os: macos-14
-            python-version: '3.14'
+            os: macos-13
+            python-version: '3.12'
             python-arch: x64
             rust-target: x86_64-apple-darwin
             build-args: --target x86_64-apple-darwin
@@ -96,7 +96,7 @@ jobs:
             artifact-name: wheels-macos-x86_64
           - label: windows-x86_64
             os: windows-latest
-            python-version: '3.14'
+            python-version: '3.12'
             python-arch: x64
             rust-target: ''
             build-args: ''
