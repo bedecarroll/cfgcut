@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.1 - 2025-10-13
+
+- align crate metadata with the v0.3.1 release tag used by cargo-dist
+
 ## 0.3.0 - 2025-10-13
 
 - add multi-platform Python wheel builds and sdist verification to CI and Release workflows
