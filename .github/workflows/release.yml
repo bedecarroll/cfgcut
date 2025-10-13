@@ -63,9 +63,117 @@ jobs:
           name: ${{ matrix.archive_name }}
           path: ${{ matrix.archive_name }}
 
+  python-artifacts:
+    name: Python artifacts (${{ matrix.label }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - label: linux-x86_64
+            os: ubuntu-latest
+            python-version: '3.12'
+            python-arch: x64
+            rust-target: ''
+            build-args: ''
+            produce-sdist: true
+            artifact-name: wheels-linux-x86_64
+          - label: macos-aarch64
+            os: macos-14
+            python-version: '3.12'
+            python-arch: arm64
+            rust-target: ''
+            build-args: ''
+            produce-sdist: false
+            artifact-name: wheels-macos-aarch64
+          - label: macos-x86_64
+            os: macos-14
+            python-version: '3.12'
+            python-arch: x64
+            rust-target: x86_64-apple-darwin
+            build-args: --target x86_64-apple-darwin
+            produce-sdist: false
+            artifact-name: wheels-macos-x86_64
+          - label: windows-x86_64
+            os: windows-latest
+            python-version: '3.12'
+            python-arch: x64
+            rust-target: ''
+            build-args: ''
+            produce-sdist: false
+            artifact-name: wheels-windows-x86_64
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.90
+
+      - name: Add cross compilation target
+        if: matrix.rust-target != ''
+        run: rustup target add ${{ matrix.rust-target }}
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          architecture: ${{ matrix.python-arch }}
+
+      - name: Install Python tooling
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install "maturin>=1.6,<2.0" pytest
+
+      - name: Prepare dist directory
+        shell: bash
+        run: rm -rf dist
+
+      - name: Build sdist
+        if: matrix.produce-sdist
+        run: |
+          maturin sdist --manifest-path crates/pycfgcut/Cargo.toml --out dist
+
+      - name: Build wheel
+        run: |
+          maturin build --manifest-path crates/pycfgcut/Cargo.toml --release --locked --out dist ${{ matrix.build-args }}
+
+      - name: Verify sdist install
+        if: matrix.produce-sdist
+        run: |
+          python -m pip uninstall -y pycfgcut || true
+          python -m pip install dist/pycfgcut-*.tar.gz
+          python - <<'PY'
+          import pycfgcut
+          from pathlib import Path
+          fixture = Path("tests/fixtures/juniper_junos/sample.conf").resolve()
+          result = pycfgcut.run_cfg(["interfaces|>>|"], [str(fixture)])
+          assert result["matched"]
+          PY
+
+      - name: Install wheel
+        run: |
+          python -m pip uninstall -y pycfgcut || true
+          python -m pip install dist/pycfgcut-*.whl
+
+      - name: Run pytest
+        run: python -m pytest crates/pycfgcut/tests
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact-name }}
+          path: dist
+          if-no-files-found: error
+
   release:
     name: Create Release
-    needs: build
+    needs:
+      - build
+      - python-artifacts
+      - publish-pypi
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -81,7 +189,7 @@ jobs:
       - name: Move artifacts to release directory
         run: |
           mkdir -p release
-          find artifacts -type f -name "cfgcut-*" -exec cp {} release/ \;
+          find artifacts -type f \( -name "cfgcut-*" -o -name "pycfgcut-*" \) -exec cp {} release/ \;
           ls -la release/
 
       - name: Create release
@@ -92,3 +200,25 @@ jobs:
           make_latest: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  publish-pypi:
+    name: Publish to PyPI
+    needs: python-artifacts
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    environment:
+      name: pypi
+    permissions:
+      id-token: write
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: wheels-*
+          path: dist
+          merge-multiple: true
+
+      - name: Publish artifacts
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: dist
