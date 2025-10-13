@@ -35,3 +35,8 @@ broken_intra_doc_links = "deny"
 all = "warn"
 pedantic = "warn"
 nursery = "warn"
+
+# The profile that 'dist' will build with
+[profile.dist]
+inherits = "release"
+lto = "thin"

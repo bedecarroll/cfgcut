@@ -36,7 +36,8 @@ jobs:
             mdbook@0.4.52,
             cargo-vet,
             cargo-msrv,
-            typos
+            typos,
+            cargo-dist@0.29.0
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -46,6 +47,8 @@ jobs:
           python -m pip install maturin pytest
       - name: Run checks
         run: mise run check
+      - name: Release plan
+        run: mise run dist-plan
       - name: Coverage report
         run: mise run coverage
 
