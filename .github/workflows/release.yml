@@ -72,7 +72,7 @@ jobs:
         include:
           - label: linux-x86_64
             os: ubuntu-latest
-            python-version: '3.12'
+            python-version: '3.14'
             python-arch: x64
             rust-target: ''
             build-args: ''
@@ -80,7 +80,7 @@ jobs:
             artifact-name: wheels-linux-x86_64
           - label: macos-aarch64
             os: macos-14
-            python-version: '3.12'
+            python-version: '3.14'
             python-arch: arm64
             rust-target: ''
             build-args: ''
@@ -88,7 +88,7 @@ jobs:
             artifact-name: wheels-macos-aarch64
           - label: macos-x86_64
             os: macos-14
-            python-version: '3.12'
+            python-version: '3.14'
             python-arch: x64
             rust-target: x86_64-apple-darwin
             build-args: --target x86_64-apple-darwin
@@ -96,7 +96,7 @@ jobs:
             artifact-name: wheels-macos-x86_64
           - label: windows-x86_64
             os: windows-latest
-            python-version: '3.12'
+            python-version: '3.14'
             python-arch: x64
             rust-target: ''
             build-args: ''
@@ -116,11 +116,25 @@ jobs:
         if: matrix.rust-target != ''
         run: rustup target add ${{ matrix.rust-target }}
 
+      - name: Cache cargo directories
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-python-release-${{ matrix.label }}-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-python-release-${{ matrix.label }}-
+            ${{ runner.os }}-python-release-
+
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
           architecture: ${{ matrix.python-arch }}
+          cache: 'pip'
 
       - name: Install Python tooling
         run: |
@@ -210,6 +224,7 @@ jobs:
       name: pypi
     permissions:
       id-token: write
+      actions: read
     steps:
       - name: Download artifacts
         uses: actions/download-artifact@v4
