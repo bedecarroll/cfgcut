@@ -6,6 +6,8 @@
 - Add smoke tests for the Python bridge so core scenarios (matches + token extraction) stay green.
 - Enforce `missing_docs = "deny"` once new documentation stabilises so future public API additions stay covered.
 - Add focused rustdoc examples/doc-tests for the `RunRequest` builder, anonymization flow, and token output to lock in the documented surface.
+- Introduce layered configuration loading (config file, `CFGCUT_*` environment variables, CLI overrides) so teams can define durable defaults without extra scripting.
+- Prototype an interactive match lab/REPL that lets network engineers iterate on pattern chains (`||`, `|>>|`, comment segments) before running them in batch.
 
 ## Dialect & fixture support
 - Stage the fixture library Brian is sourcing and wire every fixture into the test suite.

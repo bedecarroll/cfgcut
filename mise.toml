@@ -90,6 +90,36 @@ else
   echo "cargo-msrv not installed; skipping MSRV verification" >&2
 fi'"""]
 
+[tasks.dist-plan]
+description = "Render the cargo-dist release plan for cfgcut"
+run = ["""bash -lc 'set -euo pipefail
+if ! dist --version >/dev/null 2>&1; then
+  echo "cargo-dist is not installed. Install with cargo install cargo-dist --locked." >&2
+  exit 1
+fi
+dist plan
+'"""]
+
+[tasks.dist-build]
+description = "Build distributable artifacts with cargo-dist"
+run = ["""bash -lc 'set -euo pipefail
+if ! dist --version >/dev/null 2>&1; then
+  echo "cargo-dist is not installed. Install with cargo install cargo-dist --locked." >&2
+  exit 1
+fi
+dist build
+'"""]
+
+[tasks.dist-check]
+description = "Verify cargo-dist artifacts and manifest"
+run = ["""bash -lc 'set -euo pipefail
+if ! dist --version >/dev/null 2>&1; then
+  echo "cargo-dist is not installed. Install with cargo install cargo-dist --locked." >&2
+  exit 1
+fi
+dist plan --output-format=json >/dev/null
+'"""]
+
 [tasks.check]
 description = "Run formatting, linting, tests, dependency audit, and docs build"
 run = [
