@@ -107,6 +107,7 @@ Detailed matcher behaviour, contribution guidelines, coverage expectations, and 
 
 - Run `mise run check` before sending a PR (fmt, clippy, tests, cargo-deny, docs).
 - Optional extras: `mise run coverage`, `mise run bench`, `mise run fuzz parser`.
+- See `docs/releasing.md` for the release checklist and PyPI publishing steps.
 - See `CONTRIBUTING.md` and `docs/dialect_guidelines.md` for coding standards and dialect expectations.
 
 Happy slicing!
