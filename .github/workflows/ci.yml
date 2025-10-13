@@ -37,6 +37,13 @@ jobs:
             cargo-vet,
             cargo-msrv,
             typos
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install Python tooling
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install maturin pytest
       - name: Run checks
         run: mise run check
       - name: Coverage report
@@ -62,7 +69,7 @@ jobs:
         with:
           version: 2025.10.5
       - name: Install cargo-fuzz
-        run: cargo install cargo-fuzz
+        run: cargo install cargo-fuzz --force
       - name: Install nightly toolchain
         run: rustup toolchain install nightly --profile minimal
       - name: Parser fuzz smoke
@@ -70,8 +77,14 @@ jobs:
       - name: Matcher fuzz smoke
         run: mise run fuzz matcher -- --sanitizer=undefined -runs=1000
 
-  python-smoke:
-    runs-on: ubuntu-latest
+  python-wheels:
+    name: python (${{ matrix.os }} / py${{ matrix.python-version }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-14, windows-latest]
+        python-version: ['3.9', '3.12']
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
@@ -79,18 +92,55 @@ jobs:
           toolchain: 1.90
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
-      - name: Create virtualenv and install tooling
+          python-version: ${{ matrix.python-version }}
+      - name: Prepare virtualenv
+        shell: bash
         run: |
           python -m venv .venv
-          source .venv/bin/activate
+          if [ -f .venv/Scripts/activate ]; then
+            echo "VIRTUAL_ENV=$PWD/.venv" >> "$GITHUB_ENV"
+            echo "$PWD/.venv/Scripts" >> "$GITHUB_PATH"
+          else
+            echo "VIRTUAL_ENV=$PWD/.venv" >> "$GITHUB_ENV"
+            echo "$PWD/.venv/bin" >> "$GITHUB_PATH"
+          fi
+      - name: Install Python tooling
+        shell: bash
+        run: |
           python -m pip install --upgrade pip
-          pip install maturin pytest
-      - name: Build pycfgcut extension
+          python -m pip install maturin pytest
+      - name: Build extension in develop mode
+        shell: bash
         run: |
-          source .venv/bin/activate
           maturin develop --manifest-path crates/pycfgcut/Cargo.toml --release
-      - name: Run pytest smoke suite
+      - name: Run pytest (editable build)
+        shell: bash
         run: |
-          source .venv/bin/activate
+          pytest crates/pycfgcut/tests
+      - name: Build wheel artifact
+        shell: bash
+        run: |
+          rm -rf dist
+          maturin build --manifest-path crates/pycfgcut/Cargo.toml --release --out dist
+      - name: Install wheel
+        shell: bash
+        run: |
+          python -m pip uninstall -y pycfgcut || true
+          python -m pip install dist/pycfgcut-*.whl
+      - name: Verify wheel import
+        shell: bash
+        run: |
+          python - <<'PY'
+          from importlib import metadata
+          from pathlib import Path
+          import pycfgcut
+
+          assert metadata.version("pycfgcut") == pycfgcut.__version__
+          fixture = Path("tests/fixtures/juniper_junos/sample.conf").resolve()
+          res = pycfgcut.run_cfg(["interfaces|>>|"], [str(fixture)])
+          assert res["matched"]
+          PY
+      - name: Run pytest (wheel install)
+        shell: bash
+        run: |
           pytest crates/pycfgcut/tests

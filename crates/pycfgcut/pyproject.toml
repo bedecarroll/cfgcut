@@ -1,0 +1,42 @@
+[build-system]
+requires = ["maturin>=1.6,<2.0"]
+build-backend = "maturin"
+
+[project]
+name = "pycfgcut"
+dynamic = ["version"]
+description = "Python bindings for cfgcut, the deterministic configuration slicer"
+readme = "README.md"
+requires-python = ">=3.9"
+license = { file = "LICENSE" }
+authors = [{ name = "cfgcut maintainers" }]
+keywords = ["cfgcut", "networking", "automation"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: System Administrators",
+    "Intended Audience :: Telecommunications Industry",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: MacOS :: MacOS X",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Rust",
+    "Topic :: System :: Networking",
+    "Topic :: Software Development :: Libraries",
+]
+
+[project.urls]
+Homepage = "https://cfgcut.bedecarroll.com"
+Documentation = "https://cfgcut.bedecarroll.com"
+Repository = "https://github.com/bedecarroll/cfgcut"
+Changelog = "https://github.com/bedecarroll/cfgcut/blob/main/CHANGELOG.md"
+
+[tool.maturin]
+bindings = "pyo3-abi3"
+module-name = "pycfgcut"
+strip = true
+sdist-include = ["src", "Cargo.toml", "README.md", "LICENSE", "../cfgcut/**"]

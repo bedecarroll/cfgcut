@@ -3,6 +3,14 @@ name = "pycfgcut"
 version = "0.2.0"
 edition = "2024"
 publish = false
+description = "Python bindings for cfgcut, the deterministic configuration slicer"
+license = "MIT"
+homepage = "https://cfgcut.bedecarroll.com"
+repository = "https://github.com/bedecarroll/cfgcut"
+documentation = "https://cfgcut.bedecarroll.com"
+readme = "README.md"
+keywords = ["networking", "configuration", "python"]
+categories = ["network-programming", "command-line-utilities"]
 
 [lib]
 name = "pycfgcut"
