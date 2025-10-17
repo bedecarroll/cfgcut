@@ -70,6 +70,64 @@ fn ios_descendant_match_includes_context() {
 }
 
 #[test]
+fn ios_banner_wildcard_captures_all_types() {
+    let expected_classic = "\
+banner login ^C
+#####
+Authorized access only
+Disconnect now if you are not permitted.
+#####
+^C
+";
+    let expected_dollar = "\
+banner login $
+dollar banner
+$
+";
+    let expected_console = "\
+banner console ^C
+This
+  has
+   indents
+^C
+";
+    let expected_file = "banner login file flash:/motd.txt\n";
+    let path = fixture_path("cisco_ios/banner.conf");
+    let header_line = header("!", &path);
+
+    let mut cmd = cfgcut_cmd();
+    cmd.args(["-m", "banner .*|>>|", &path])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains(&header_line))
+        .stdout(predicate::str::contains(expected_classic))
+        .stdout(predicate::str::contains(expected_dollar))
+        .stdout(predicate::str::contains(expected_console))
+        .stdout(predicate::str::contains(expected_file))
+        .stdout(predicate::str::contains("line vty 0 4").not());
+}
+
+#[test]
+fn ios_banner_console_preserves_indents() {
+    let expected = "\
+banner console ^C
+This
+  has
+   indents
+^C
+";
+    let path = fixture_path("cisco_ios/banner.conf");
+    let header_line = header("!", &path);
+
+    let mut cmd = cfgcut_cmd();
+    cmd.args(["-m", "banner console|>>|", &path])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains(&header_line))
+        .stdout(predicate::str::contains(expected));
+}
+
+#[test]
 fn nxos_interface_match_includes_children() {
     let path = fixture_path("cisco_nxos/sample.conf");
     let header_line = header("!", &path);
@@ -80,6 +138,28 @@ fn nxos_interface_match_includes_children() {
         .stdout(predicate::str::contains(&header_line))
         .stdout(predicate::str::contains("interface Ethernet1/1"))
         .stdout(predicate::str::contains("no shutdown"));
+}
+
+#[test]
+fn nxos_banner_wildcard_matches_all() {
+    let expected = "\
+banner motd EOF
+Welcome to NX-OS
+Authorized access only.
+EOF
+";
+    let expected_file = "banner motd file bootflash:nx-motd.txt\n";
+    let path = fixture_path("cisco_nxos/sample.conf");
+    let header_line = header("!", &path);
+
+    let mut cmd = cfgcut_cmd();
+    cmd.args(["-m", "banner .*|>>|", &path])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains(&header_line))
+        .stdout(predicate::str::contains(expected))
+        .stdout(predicate::str::contains(expected_file))
+        .stdout(predicate::str::contains("interface Vlan10").not());
 }
 
 #[test]

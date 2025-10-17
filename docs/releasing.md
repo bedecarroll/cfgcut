@@ -12,8 +12,8 @@ This repository publishes both the Rust CLI (`cfgcut`) and the Python bindings (
 
 1. Create an annotated tag that matches the desired semantic version, for example:
    ```bash
-   git tag -a v0.3.1 -m "cfgcut v0.3.1"
-   git push origin v0.3.1
+   git tag -a v0.3.2 -m "cfgcut v0.3.2"
+   git push origin v0.3.2
    ```
 2. The `Release` workflow builds:
    - cfgcut binaries for Linux (GNU + musl), macOS (x86_64 + arm64), and Windows.
