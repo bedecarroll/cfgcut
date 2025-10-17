@@ -15,10 +15,10 @@ fn fixture(rel: &str) -> PathBuf {
 }
 
 fn expected_with_header(marker: &str, path: &Path, body: &str) -> String {
-    let name = path
-        .file_name()
-        .map(|name| name.to_string_lossy().into_owned())
-        .unwrap_or_else(|| path.display().to_string());
+    let name = path.file_name().map_or_else(
+        || path.display().to_string(),
+        |name| name.to_string_lossy().into_owned(),
+    );
     let mut output = format!("{marker} cfgcut matches for {name}\n");
     output.push_str(body);
     output

@@ -1,8 +1,8 @@
 use std::path::PathBuf;
 
 use cfgcut::{
-    Anonymization, CfgcutError, CommentHandling, OutputMode, RunRequest, TokenDestination,
-    TokenRecord, run,
+    Anonymization, CfgcutError, CommentHandling, OutputMode, RenderOrder, RunRequest,
+    TokenDestination, TokenRecord, run,
 };
 use pyo3::Bound;
 use pyo3::exceptions::PyRuntimeError;
@@ -10,7 +10,7 @@ use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyModule};
 
 #[pyfunction]
-#[pyo3(signature = (matches, inputs, with_comments = false, quiet = false, anonymize = false, tokens = false, tokens_out = None))]
+#[pyo3(signature = (matches, inputs, with_comments = false, sort_by_path = false, quiet = false, anonymize = false, tokens = false, tokens_out = None))]
 #[expect(
     clippy::too_many_arguments,
     reason = "Python binding mirrors the CLI surface without breaking parameters"
@@ -20,6 +20,7 @@ fn run_cfg(
     matches: Vec<String>,
     inputs: Vec<String>,
     with_comments: bool,
+    sort_by_path: bool,
     quiet: bool,
     anonymize: bool,
     tokens: bool,
@@ -53,6 +54,11 @@ fn run_cfg(
             OutputMode::Quiet
         } else {
             OutputMode::Normal
+        })
+        .render_order(if sort_by_path {
+            RenderOrder::Hierarchical
+        } else {
+            RenderOrder::Original
         })
         .anonymization(if anonymize {
             Anonymization::Enabled

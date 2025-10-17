@@ -8,6 +8,7 @@
 | --- | --- |
 | `-m, --match <MATCH>` | Hierarchical regex segments (anchored). Repeat the flag for multiple patterns; takes precedence over inline blocks. |
 | `-c, --with-comments` | Include comment lines recognised by the active dialect. |
+| `--sort-by-path` | Order output by hierarchical path instead of source order (useful for diffing). |
 | `-q, --quiet` | Suppress stdout; rely on exit status to detect matches. |
 | `-a, --anonymize` | Scramble usernames, secrets, ASNs, and IPv4 addresses deterministically. |
 | `--tokens` | Emit newline-delimited JSON token records for every match. |
@@ -38,6 +39,12 @@ To grab an entire Junos subtree:
 
 ```bash
 cfgcut -m 'interfaces||ae1|>>|' tests/fixtures/juniper_junos/sample.conf
+```
+
+To normalize output for diffing:
+
+```bash
+cfgcut --sort-by-path -m 'interface .*|>>|' tests/fixtures/cisco_ios/sample.conf
 ```
 
 ### Inline match blocks

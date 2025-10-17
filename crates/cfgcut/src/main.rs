@@ -5,8 +5,8 @@ use std::path::PathBuf;
 use clap::{ArgAction, Parser};
 
 use cfgcut::{
-    Anonymization, CfgcutError, CommentHandling, OutputMode, RunRequest, TokenDestination,
-    TokenRecord, run,
+    Anonymization, CfgcutError, CommentHandling, OutputMode, RenderOrder, RunRequest,
+    TokenDestination, TokenRecord, run,
 };
 
 #[derive(Parser, Debug)]
@@ -35,6 +35,10 @@ struct Cli {
     #[arg(short = 'c', long = "with-comments")]
     with_comments: bool,
 
+    /// Order matched output by hierarchical path to stabilize diffs
+    #[arg(long = "sort-by-path")]
+    sort_by_path: bool,
+
     /// Suppress output and return success on match
     #[arg(short = 'q', long = "quiet")]
     quiet: bool,
@@ -62,6 +66,7 @@ fn main() {
     let Cli {
         matches,
         with_comments,
+        sort_by_path,
         quiet,
         anonymize,
         tokens,
@@ -80,6 +85,11 @@ fn main() {
             OutputMode::Quiet
         } else {
             OutputMode::Normal
+        })
+        .render_order(if sort_by_path {
+            RenderOrder::Hierarchical
+        } else {
+            RenderOrder::Original
         })
         .anonymization(if anonymize {
             Anonymization::Enabled

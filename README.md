@@ -54,6 +54,12 @@ cfgcut -q -m 'interface GigabitEthernet2||shutdown' tests/fixtures/cisco_ios/sam
 cfgcut -m 'interfaces|>>|' tests/fixtures/juniper_junos/sample.conf
 ```
 
+### Normalize output for stable diffs
+
+```bash
+cfgcut --sort-by-path -m 'interface .*|>>|' tests/fixtures/cisco_ios/sample.conf
+```
+
 ### Scrub secrets while exporting tokens
 
 ```bash
