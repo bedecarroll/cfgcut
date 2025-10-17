@@ -91,6 +91,7 @@ This
    indents
 ^C
 ";
+    let expected_file = "banner login file flash:/motd.txt\n";
     let path = fixture_path("cisco_ios/banner.conf");
     let header_line = header("!", &path);
 
@@ -101,7 +102,9 @@ This
         .stdout(predicate::str::contains(&header_line))
         .stdout(predicate::str::contains(expected_classic))
         .stdout(predicate::str::contains(expected_dollar))
-        .stdout(predicate::str::contains(expected_console));
+        .stdout(predicate::str::contains(expected_console))
+        .stdout(predicate::str::contains(expected_file))
+        .stdout(predicate::str::contains("line vty 0 4").not());
 }
 
 #[test]
@@ -145,6 +148,7 @@ Welcome to NX-OS
 Authorized access only.
 EOF
 ";
+    let expected_file = "banner motd file bootflash:nx-motd.txt\n";
     let path = fixture_path("cisco_nxos/sample.conf");
     let header_line = header("!", &path);
 
@@ -153,7 +157,9 @@ EOF
         .assert()
         .success()
         .stdout(predicate::str::contains(&header_line))
-        .stdout(predicate::str::contains(expected));
+        .stdout(predicate::str::contains(expected))
+        .stdout(predicate::str::contains(expected_file))
+        .stdout(predicate::str::contains("interface Vlan10").not());
 }
 
 #[test]

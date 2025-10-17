@@ -62,10 +62,10 @@ pub(super) fn parse(text: &str) -> ParsedConfig {
         } else {
             LineKind::Command
         };
-        if matches!(kind, LineKind::Command) {
-            if let Some(text) = banner_match_text(trimmed) {
-                match_text = Some(text);
-            }
+        if matches!(kind, LineKind::Command)
+            && let Some(text) = banner_match_text(trimmed)
+        {
+            match_text = Some(text);
         }
 
         let idx = parsed.push_line(trimmed_end.to_string(), match_text, kind, parent);
@@ -86,7 +86,11 @@ fn banner_delimiter(line: &str) -> Option<&str> {
         _ => return None,
     }
     parts.next()?;
-    parts.next()
+    let candidate = parts.next()?;
+    if candidate.eq_ignore_ascii_case("file") || parts.next().is_some() {
+        return None;
+    }
+    Some(candidate)
 }
 
 fn banner_match_text(line: &str) -> Option<String> {
