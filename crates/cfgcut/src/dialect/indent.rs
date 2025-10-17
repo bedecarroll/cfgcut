@@ -11,10 +11,32 @@ pub(super) fn detect(text: &str) -> bool {
 pub(super) fn parse(text: &str) -> ParsedConfig {
     let mut parsed = ParsedConfig::default();
     let mut stack: Vec<(usize, usize)> = Vec::new();
+    let mut multiline: Option<(usize, String)> = None;
 
     for line in text.lines() {
         let trimmed_end = line.trim_end();
-        if trimmed_end.trim().is_empty() {
+        let trimmed = trimmed_end.trim();
+
+        if let Some((parent_idx, delimiter)) = multiline.take() {
+            let is_closing = trimmed == delimiter;
+            let kind = if is_closing {
+                LineKind::Closing
+            } else {
+                LineKind::Command
+            };
+            let match_text = if is_closing {
+                None
+            } else {
+                Some(trimmed.to_string())
+            };
+            parsed.push_line(trimmed_end.to_string(), match_text, kind, Some(parent_idx));
+            if !is_closing {
+                multiline = Some((parent_idx, delimiter));
+            }
+            continue;
+        }
+
+        if trimmed.is_empty() {
             continue;
         }
         let indent = trimmed_end
@@ -31,7 +53,7 @@ pub(super) fn parse(text: &str) -> ParsedConfig {
         }
 
         let parent = stack.last().map(|&(_, idx)| idx);
-        let match_text = Some(extract_match_text(
+        let mut match_text = Some(extract_match_text(
             trimmed_end,
             dialect_comment_prefix(trimmed_end),
         ));
@@ -40,10 +62,39 @@ pub(super) fn parse(text: &str) -> ParsedConfig {
         } else {
             LineKind::Command
         };
+        if matches!(kind, LineKind::Command) {
+            if let Some(text) = banner_match_text(trimmed) {
+                match_text = Some(text);
+            }
+        }
 
         let idx = parsed.push_line(trimmed_end.to_string(), match_text, kind, parent);
         stack.push((indent, idx));
+
+        if let Some(delimiter) = banner_delimiter(trimmed) {
+            multiline = Some((idx, delimiter.to_string()));
+        }
     }
 
     parsed
+}
+
+fn banner_delimiter(line: &str) -> Option<&str> {
+    let mut parts = line.split_whitespace();
+    match parts.next() {
+        Some(word) if word.eq_ignore_ascii_case("banner") => {}
+        _ => return None,
+    }
+    parts.next()?;
+    parts.next()
+}
+
+fn banner_match_text(line: &str) -> Option<String> {
+    let mut parts = line.split_whitespace();
+    let command = parts.next()?;
+    if !command.eq_ignore_ascii_case("banner") {
+        return None;
+    }
+    let banner_kind = parts.next()?;
+    Some(format!("{command} {banner_kind}"))
 }

@@ -44,7 +44,7 @@ fn version_reports_semver() {
     cmd.arg("--version")
         .assert()
         .success()
-        .stdout(contains("cfgcut").and(contains("0.3.1")));
+        .stdout(contains("cfgcut").and(contains("0.3.2")));
 }
 
 #[test]

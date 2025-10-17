@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.2 - 2025-10-17
+
+- fix Cisco banner parsing across IOS, IOS-XE, IOS-XR, NX-OS, and other indent dialects by tracking custom delimiters
+
 ## 0.3.1 - 2025-10-13
 
 - align crate metadata with the v0.3.1 release tag used by cargo-dist
