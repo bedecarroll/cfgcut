@@ -4,7 +4,7 @@
 //! single invocation.
 
 use std::borrow::Cow;
-use std::collections::{BTreeSet, VecDeque};
+use std::collections::{BTreeMap, BTreeSet, VecDeque};
 use std::fmt;
 use std::fs;
 use std::io;
@@ -166,6 +166,7 @@ pub struct RunRequest {
     matches: Vec<String>,
     comment_handling: CommentHandling,
     output_mode: OutputMode,
+    render_order: RenderOrder,
     anonymization: Anonymization,
     inputs: Vec<PathBuf>,
     token_output: Option<TokenDestination>,
@@ -187,6 +188,21 @@ pub enum OutputMode {
     Normal,
     /// Suppress stdout entirely.
     Quiet,
+}
+
+/// Determines how matched lines should be ordered in the rendered output.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum RenderOrder {
+    /// Preserve the original source ordering.
+    Original,
+    /// Group and order matches by their hierarchical path.
+    Hierarchical,
+}
+
+impl Default for RenderOrder {
+    fn default() -> Self {
+        Self::Original
+    }
 }
 
 /// Whether anonymization of sensitive tokens is enabled.
@@ -219,7 +235,7 @@ pub enum TokenKind {
     Secret,
     /// An autonomous system number.
     Asn,
-    /// An IPv4 address.
+    /// An `IPv4` address.
     Ip,
 }
 
@@ -275,7 +291,7 @@ impl RunRequest {
 
     /// The destination used to emit captured token data, if configured.
     #[must_use]
-    pub fn token_output(&self) -> Option<&TokenDestination> {
+    pub const fn token_output(&self) -> Option<&TokenDestination> {
         self.token_output.as_ref()
     }
 
@@ -293,19 +309,25 @@ impl RunRequest {
 
     /// Whether commands originating from comments should be included in output.
     #[must_use]
-    pub fn comment_handling(&self) -> CommentHandling {
+    pub const fn comment_handling(&self) -> CommentHandling {
         self.comment_handling
     }
 
     /// The style of stdout emission for the current run.
     #[must_use]
-    pub fn output_mode(&self) -> OutputMode {
+    pub const fn output_mode(&self) -> OutputMode {
         self.output_mode
+    }
+
+    /// The ordering strategy applied when rendering matched output.
+    #[must_use]
+    pub const fn render_order(&self) -> RenderOrder {
+        self.render_order
     }
 
     /// Whether sensitive values should be anonymized while rendering output.
     #[must_use]
-    pub fn anonymization(&self) -> Anonymization {
+    pub const fn anonymization(&self) -> Anonymization {
         self.anonymization
     }
 }
@@ -316,6 +338,7 @@ pub struct RunRequestBuilder {
     matches: Vec<String>,
     comment_handling: CommentHandling,
     output_mode: OutputMode,
+    render_order: RenderOrder,
     anonymization: Anonymization,
     inputs: Vec<PathBuf>,
     token_output: Option<TokenDestination>,
@@ -327,6 +350,7 @@ impl Default for RunRequestBuilder {
             matches: Vec::new(),
             comment_handling: CommentHandling::Exclude,
             output_mode: OutputMode::Normal,
+            render_order: RenderOrder::Original,
             anonymization: Anonymization::Disabled,
             inputs: Vec::new(),
             token_output: None,
@@ -344,21 +368,28 @@ impl RunRequestBuilder {
 
     /// Configure how comments should be treated in the rendered output.
     #[must_use]
-    pub fn comment_handling(mut self, handling: CommentHandling) -> Self {
+    pub const fn comment_handling(mut self, handling: CommentHandling) -> Self {
         self.comment_handling = handling;
         self
     }
 
     /// Configure how verbose stdout should be during execution.
     #[must_use]
-    pub fn output_mode(mut self, mode: OutputMode) -> Self {
+    pub const fn output_mode(mut self, mode: OutputMode) -> Self {
         self.output_mode = mode;
+        self
+    }
+
+    /// Configure how matched output should be ordered.
+    #[must_use]
+    pub const fn render_order(mut self, order: RenderOrder) -> Self {
+        self.render_order = order;
         self
     }
 
     /// Enable or disable token anonymization in the rendered output.
     #[must_use]
-    pub fn anonymization(mut self, anonymization: Anonymization) -> Self {
+    pub const fn anonymization(mut self, anonymization: Anonymization) -> Self {
         self.anonymization = anonymization;
         self
     }
@@ -384,6 +415,7 @@ impl RunRequestBuilder {
             matches: self.matches,
             comment_handling: self.comment_handling,
             output_mode: self.output_mode,
+            render_order: self.render_order,
             anonymization: self.anonymization,
             inputs: self.inputs,
             token_output: self.token_output,
@@ -534,9 +566,10 @@ pub fn run(request: &RunRequest) -> Result<RunOutput, CfgcutError> {
         }
 
         if matched_file {
+            let ordered = order_indices(&parsed, &indices, request.render_order());
             let rendered = render_output(
                 &parsed,
-                &indices,
+                &ordered,
                 include_comments,
                 anonymizer.as_mut(),
                 token_accumulator.as_mut(),
@@ -607,9 +640,7 @@ fn collect_files(inputs: &[PathBuf]) -> Result<Vec<PathBuf>, CfgcutError> {
             }
 
             if !matched_any {
-                return Err(CfgcutError::GlobPatternNoMatches {
-                    pattern: pattern.clone(),
-                });
+                return Err(CfgcutError::GlobPatternNoMatches { pattern });
             }
 
             continue;
@@ -966,15 +997,61 @@ fn line_path(config: &ParsedConfig, idx: usize) -> Vec<String> {
     path
 }
 
-fn render_output(
+fn order_indices(
     config: &ParsedConfig,
     indices: &BTreeSet<usize>,
+    order: RenderOrder,
+) -> Vec<usize> {
+    match order {
+        RenderOrder::Original => indices.iter().copied().collect(),
+        RenderOrder::Hierarchical => {
+            let mut grouped: BTreeMap<usize, Vec<usize>> = BTreeMap::new();
+            for &idx in indices {
+                let root = root_index(config, idx);
+                grouped.entry(root).or_default().push(idx);
+            }
+            let mut groups = grouped
+                .into_iter()
+                .map(|(root, mut lines)| {
+                    lines.sort_unstable();
+                    let key = {
+                        let path = line_path(config, root);
+                        if path.is_empty() {
+                            config.lines[root].raw.trim().to_string()
+                        } else {
+                            path.join(" / ")
+                        }
+                    };
+                    (key, root, lines)
+                })
+                .collect::<Vec<_>>();
+            groups.sort_by(|left, right| left.0.cmp(&right.0).then(left.1.cmp(&right.1)));
+
+            let mut ordered = Vec::with_capacity(indices.len());
+            for (_, _, lines) in groups {
+                ordered.extend(lines);
+            }
+            ordered
+        }
+    }
+}
+
+fn root_index(config: &ParsedConfig, mut idx: usize) -> usize {
+    while let Some(parent) = config.lines[idx].parent {
+        idx = parent;
+    }
+    idx
+}
+
+fn render_output(
+    config: &ParsedConfig,
+    ordered: &[usize],
     with_comments: bool,
     mut anonymizer: Option<&mut Anonymizer>,
     mut tokens: Option<&mut TokenAccumulator>,
 ) -> String {
     let mut buf = String::new();
-    for &idx in indices {
+    for &idx in ordered {
         let line = &config.lines[idx];
         if matches!(line.kind, LineKind::Comment) && !with_comments {
             continue;

@@ -22,10 +22,10 @@ fn fixture_str(rel: &str) -> String {
 }
 
 fn header(marker: &str, path: &Path) -> String {
-    let name = path
-        .file_name()
-        .map(|name| name.to_string_lossy().into_owned())
-        .unwrap_or_else(|| path.display().to_string());
+    let name = path.file_name().map_or_else(
+        || path.display().to_string(),
+        |name| name.to_string_lossy().into_owned(),
+    );
     format!("{marker} cfgcut matches for {name}")
 }
 
@@ -162,14 +162,14 @@ fn directory_input_collects_files() {
 fn glob_pattern_collects_files() {
     let tmp = tempdir().unwrap();
     let dir = tmp.path();
-    let src_ios = fixture_path("cisco_ios/sample.conf");
-    let src_eos = fixture_path("arista_eos/sample.conf");
-    fs::copy(&src_ios, dir.join("ios.cfg")).unwrap();
-    fs::copy(&src_eos, dir.join("eos.cfg")).unwrap();
+    let ios_fixture = fixture_path("cisco_ios/sample.conf");
+    let arista_fixture = fixture_path("arista_eos/sample.conf");
+    fs::copy(&ios_fixture, dir.join("ios.cfg")).unwrap();
+    fs::copy(&arista_fixture, dir.join("eos.cfg")).unwrap();
 
     let pattern = format!("{}/*.cfg", dir.to_string_lossy());
     let ios_header = header("!", &dir.join("ios.cfg"));
-    let eos_header = header("!", &dir.join("eos.cfg"));
+    let arista_header = header("!", &dir.join("eos.cfg"));
 
     let mut cmd = cfgcut_cmd();
     cmd.args([
@@ -182,7 +182,7 @@ fn glob_pattern_collects_files() {
     .assert()
     .success()
     .stdout(predicate::str::contains(&ios_header))
-    .stdout(predicate::str::contains(&eos_header))
+    .stdout(predicate::str::contains(&arista_header))
     .stdout(predicate::str::contains("interface GigabitEthernet1"))
     .stdout(predicate::str::contains("interface Ethernet1"));
 }

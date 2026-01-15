@@ -18,10 +18,10 @@ fn fixture_path(rel: &str) -> String {
 }
 
 fn header(marker: &str, path: &str) -> String {
-    let name = Path::new(path)
-        .file_name()
-        .map(|name| name.to_string_lossy().into_owned())
-        .unwrap_or_else(|| path.to_string());
+    let name = Path::new(path).file_name().map_or_else(
+        || path.to_string(),
+        |name| name.to_string_lossy().into_owned(),
+    );
     format!("{marker} cfgcut matches for {name}")
 }
 
