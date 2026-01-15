@@ -49,7 +49,7 @@ jobs:
             artifact-name: wheels-windows-x86_64
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - uses: dtolnay/rust-toolchain@stable
         with:
@@ -57,7 +57,7 @@ jobs:
           targets: ${{ matrix.rust-target }}
 
       - name: Cache cargo directories
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ~/.cargo/registry
@@ -68,7 +68,7 @@ jobs:
             ${{ runner.os }}-python-wheels-${{ matrix.python-version }}-
             ${{ runner.os }}-python-wheels-
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
           architecture: ${{ matrix.python-arch }}
@@ -140,7 +140,7 @@ jobs:
           pytest crates/pycfgcut/tests
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: ${{ matrix.artifact-name }}
           path: dist
@@ -158,7 +158,7 @@ jobs:
       actions: read
       contents: read
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v7
         with:
           pattern: wheels-*
           path: dist
