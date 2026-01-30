@@ -4,7 +4,7 @@ members = ["cargo:crates/cfgcut"]
 # Config for 'dist'
 [dist]
 # The preferred dist version to use in CI (Cargo.toml SemVer syntax)
-cargo-dist-version = "0.29.0"
+cargo-dist-version = "0.30.3"
 # CI backends to support
 ci = "github"
 # The installers to generate for each app
@@ -19,3 +19,4 @@ precise-builds = true
 install-path = "~/.local/bin"
 # Whether to install an updater program
 install-updater = false
+github-action-commits = { "actions/checkout" = "v6", "actions/upload-artifact" = "v6", "actions/download-artifact" = "v7" }
