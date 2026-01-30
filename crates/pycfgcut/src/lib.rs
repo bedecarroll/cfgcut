@@ -81,13 +81,7 @@ fn run_cfg(
             dict.set_item("stdout", result.stdout)?;
             dict.set_item("matched", result.matched)?;
             dict.set_item("tokens", tokens_to_py(py, &result.tokens)?)?;
-            #[expect(
-                deprecated,
-                reason = "pyo3 still relies on IntoPy for PyDict conversions"
-            )]
-            {
-                Ok(dict.into_py(py))
-            }
+            Ok(dict.into())
         }
         Err(err) => Err(PyRuntimeError::new_err(err.to_string())),
     }
@@ -104,13 +98,7 @@ fn tokens_to_py(py: Python<'_>, tokens: &[TokenRecord]) -> PyResult<Vec<PyObject
             dict.set_item("original", record.original.clone())?;
             dict.set_item("anonymized", record.anonymized.clone())?;
             dict.set_item("line", record.line)?;
-            #[expect(
-                deprecated,
-                reason = "pyo3 still relies on IntoPy for PyDict conversions"
-            )]
-            {
-                Ok(dict.into_py(py))
-            }
+            Ok(dict.into())
         })
         .collect()
 }
