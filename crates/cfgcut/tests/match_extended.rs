@@ -2,11 +2,12 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 use assert_cmd::Command;
+use assert_cmd::cargo::cargo_bin_cmd;
 use predicates::prelude::*;
 use tempfile::tempdir;
 
 fn cfgcut_cmd() -> Command {
-    let mut cmd = Command::cargo_bin("cfgcut").unwrap();
+    let mut cmd = cargo_bin_cmd!("cfgcut");
     cmd.current_dir(env!("CARGO_MANIFEST_DIR"));
     cmd
 }
