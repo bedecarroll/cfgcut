@@ -19,3 +19,4 @@ precise-builds = true
 install-path = "~/.local/bin"
 # Whether to install an updater program
 install-updater = false
+github-action-commits = { "actions/checkout" = "v6", "actions/upload-artifact" = "v6", "actions/download-artifact" = "v7" }
