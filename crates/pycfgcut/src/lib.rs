@@ -25,7 +25,7 @@ fn run_cfg(
     anonymize: bool,
     tokens: bool,
     tokens_out: Option<String>,
-) -> PyResult<PyObject> {
+) -> PyResult<Py<PyAny>> {
     if matches.is_empty() {
         return Err(PyRuntimeError::new_err(
             "at least one match expression is required",
@@ -87,7 +87,7 @@ fn run_cfg(
     }
 }
 
-fn tokens_to_py(py: Python<'_>, tokens: &[TokenRecord]) -> PyResult<Vec<PyObject>> {
+fn tokens_to_py(py: Python<'_>, tokens: &[TokenRecord]) -> PyResult<Vec<Py<PyAny>>> {
     tokens
         .iter()
         .map(|record| {
