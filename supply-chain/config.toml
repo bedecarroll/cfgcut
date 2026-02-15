@@ -81,11 +81,11 @@ version = "0.2.2"
 criteria = "safe-to-run"
 
 [[exemptions.clap]]
-version = "4.5.57"
+version = "4.5.58"
 criteria = "safe-to-deploy"
 
 [[exemptions.clap_builder]]
-version = "4.5.57"
+version = "4.5.58"
 criteria = "safe-to-deploy"
 
 [[exemptions.clap_derive]]
@@ -93,7 +93,7 @@ version = "4.5.55"
 criteria = "safe-to-deploy"
 
 [[exemptions.clap_lex]]
-version = "0.7.7"
+version = "1.0.0"
 criteria = "safe-to-deploy"
 
 [[exemptions.colorchoice]]
@@ -265,7 +265,7 @@ version = "1.13.0"
 criteria = "safe-to-deploy"
 
 [[exemptions.predicates]]
-version = "3.1.3"
+version = "3.1.4"
 criteria = "safe-to-run"
 
 [[exemptions.predicates-core]]
@@ -381,7 +381,7 @@ version = "0.13.4"
 criteria = "safe-to-deploy"
 
 [[exemptions.tempfile]]
-version = "3.24.0"
+version = "3.25.0"
 criteria = "safe-to-run"
 
 [[exemptions.termtree]]
@@ -393,15 +393,15 @@ version = "1.2.1"
 criteria = "safe-to-run"
 
 [[exemptions.toml]]
-version = "0.9.11+spec-1.1.0"
+version = "1.0.1+spec-1.1.0"
 criteria = "safe-to-run"
 
 [[exemptions.toml_datetime]]
-version = "0.7.5+spec-1.1.0"
+version = "1.0.0+spec-1.1.0"
 criteria = "safe-to-run"
 
 [[exemptions.toml_parser]]
-version = "1.0.6+spec-1.1.0"
+version = "1.0.8+spec-1.1.0"
 criteria = "safe-to-run"
 
 [[exemptions.toml_writer]]
