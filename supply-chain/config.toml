@@ -281,23 +281,23 @@ version = "1.0.106"
 criteria = "safe-to-deploy"
 
 [[exemptions.pyo3]]
-version = "0.28.0"
+version = "0.28.1"
 criteria = "safe-to-deploy"
 
 [[exemptions.pyo3-build-config]]
-version = "0.28.0"
+version = "0.28.1"
 criteria = "safe-to-deploy"
 
 [[exemptions.pyo3-ffi]]
-version = "0.28.0"
+version = "0.28.1"
 criteria = "safe-to-deploy"
 
 [[exemptions.pyo3-macros]]
-version = "0.28.0"
+version = "0.28.1"
 criteria = "safe-to-deploy"
 
 [[exemptions.pyo3-macros-backend]]
-version = "0.28.0"
+version = "0.28.1"
 criteria = "safe-to-deploy"
 
 [[exemptions.python3-dll-a]]
