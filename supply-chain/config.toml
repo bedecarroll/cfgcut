@@ -62,7 +62,7 @@ criteria = "safe-to-run"
 
 [[exemptions.cc]]
 version = "1.2.55"
-criteria = "safe-to-run"
+criteria = "safe-to-deploy"
 
 [[exemptions.cfg-if]]
 version = "1.0.4"
@@ -154,7 +154,7 @@ criteria = "safe-to-run"
 
 [[exemptions.find-msvc-tools]]
 version = "0.1.9"
-criteria = "safe-to-run"
+criteria = "safe-to-deploy"
 
 [[exemptions.float-cmp]]
 version = "0.10.0"
@@ -300,6 +300,10 @@ criteria = "safe-to-deploy"
 version = "0.28.0"
 criteria = "safe-to-deploy"
 
+[[exemptions.python3-dll-a]]
+version = "0.2.14"
+criteria = "safe-to-deploy"
+
 [[exemptions.quote]]
 version = "1.0.44"
 criteria = "safe-to-deploy"
@@ -362,7 +366,7 @@ criteria = "safe-to-run"
 
 [[exemptions.shlex]]
 version = "1.3.0"
-criteria = "safe-to-run"
+criteria = "safe-to-deploy"
 
 [[exemptions.similar]]
 version = "2.7.0"

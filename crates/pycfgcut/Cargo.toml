@@ -17,6 +17,6 @@ name = "pycfgcut"
 crate-type = ["cdylib"]
 
 [dependencies]
-pyo3 = { workspace = true, features = ["extension-module", "abi3-py39", "macros"] }
+pyo3 = { workspace = true, features = ["extension-module", "abi3-py39", "macros", "generate-import-lib"] }
 cfgcut = { path = "../cfgcut", version = "0.3.2" }
 serde_json = { workspace = true }
