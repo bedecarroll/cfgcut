@@ -81,11 +81,11 @@ version = "0.2.2"
 criteria = "safe-to-run"
 
 [[exemptions.clap]]
-version = "4.5.58"
+version = "4.5.59"
 criteria = "safe-to-deploy"
 
 [[exemptions.clap_builder]]
-version = "4.5.58"
+version = "4.5.59"
 criteria = "safe-to-deploy"
 
 [[exemptions.clap_derive]]
@@ -281,23 +281,23 @@ version = "1.0.106"
 criteria = "safe-to-deploy"
 
 [[exemptions.pyo3]]
-version = "0.28.1"
+version = "0.28.2"
 criteria = "safe-to-deploy"
 
 [[exemptions.pyo3-build-config]]
-version = "0.28.1"
+version = "0.28.2"
 criteria = "safe-to-deploy"
 
 [[exemptions.pyo3-ffi]]
-version = "0.28.1"
+version = "0.28.2"
 criteria = "safe-to-deploy"
 
 [[exemptions.pyo3-macros]]
-version = "0.28.1"
+version = "0.28.2"
 criteria = "safe-to-deploy"
 
 [[exemptions.pyo3-macros-backend]]
-version = "0.28.1"
+version = "0.28.2"
 criteria = "safe-to-deploy"
 
 [[exemptions.python3-dll-a]]
@@ -397,7 +397,7 @@ version = "1.2.1"
 criteria = "safe-to-run"
 
 [[exemptions.toml]]
-version = "1.0.1+spec-1.1.0"
+version = "1.0.3+spec-1.1.0"
 criteria = "safe-to-run"
 
 [[exemptions.toml_datetime]]
@@ -405,7 +405,7 @@ version = "1.0.0+spec-1.1.0"
 criteria = "safe-to-run"
 
 [[exemptions.toml_parser]]
-version = "1.0.8+spec-1.1.0"
+version = "1.0.9+spec-1.1.0"
 criteria = "safe-to-run"
 
 [[exemptions.toml_writer]]
