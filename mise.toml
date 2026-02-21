@@ -22,12 +22,15 @@ cargo test --doc --workspace --exclude pycfgcut
 [tasks.pytest]
 description = "Build the Python extension and run pytest coverage"
 run = ["""bash -lc 'set -euo pipefail
-python -m venv .venv
-source .venv/bin/activate
-python -m pip install --upgrade pip
-python -m pip install "maturin>=1.6,<2.0" pytest
-maturin develop --manifest-path crates/pycfgcut/Cargo.toml --release --locked
-pytest crates/pycfgcut/tests
+uv venv --clear --seed .venv
+if [ -f .venv/Scripts/python.exe ]; then
+  VENV_PYTHON=.venv/Scripts/python.exe
+else
+  VENV_PYTHON=.venv/bin/python
+fi
+uv pip install --python "$VENV_PYTHON" "maturin>=1.6,<2.0" pytest
+"$VENV_PYTHON" -m maturin develop --manifest-path crates/pycfgcut/Cargo.toml --release --locked
+"$VENV_PYTHON" -m pytest crates/pycfgcut/tests
 '"""]
 
 [tasks.deny]
