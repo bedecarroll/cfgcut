@@ -39,5 +39,4 @@ Changelog = "https://github.com/bedecarroll/cfgcut/blob/main/CHANGELOG.md"
 [tool.maturin]
 bindings = "pyo3-abi3"
 module-name = "pycfgcut"
-strip = true
 sdist-include = ["src", "Cargo.toml", "README.md", "LICENSE", "../cfgcut/**"]
