@@ -40,6 +40,10 @@ criteria = "safe-to-deploy"
 version = "2.1.2"
 criteria = "safe-to-run"
 
+[[exemptions.assert_cmd]]
+version = "2.2.0"
+criteria = "safe-to-run"
+
 [[exemptions.autocfg]]
 version = "1.5.0"
 criteria = "safe-to-deploy"
@@ -396,6 +400,10 @@ criteria = "safe-to-deploy"
 version = "3.26.0"
 criteria = "safe-to-run"
 
+[[exemptions.tempfile]]
+version = "3.27.0"
+criteria = "safe-to-run"
+
 [[exemptions.termtree]]
 version = "0.5.1"
 criteria = "safe-to-run"
@@ -406,6 +414,10 @@ criteria = "safe-to-run"
 
 [[exemptions.toml]]
 version = "1.0.4+spec-1.1.0"
+criteria = "safe-to-run"
+
+[[exemptions.toml]]
+version = "1.0.6+spec-1.1.0"
 criteria = "safe-to-run"
 
 [[exemptions.toml_datetime]]
