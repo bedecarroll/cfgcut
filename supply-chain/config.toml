@@ -20,12 +20,20 @@ criteria = "safe-to-run"
 version = "0.6.21"
 criteria = "safe-to-deploy"
 
+[[exemptions.anstream]]
+version = "1.0.0"
+criteria = "safe-to-deploy"
+
 [[exemptions.anstyle]]
 version = "1.0.13"
 criteria = "safe-to-deploy"
 
 [[exemptions.anstyle-parse]]
 version = "0.2.7"
+criteria = "safe-to-deploy"
+
+[[exemptions.anstyle-parse]]
+version = "1.0.0"
 criteria = "safe-to-deploy"
 
 [[exemptions.anstyle-query]]
@@ -92,6 +100,10 @@ criteria = "safe-to-deploy"
 version = "4.5.60"
 criteria = "safe-to-deploy"
 
+[[exemptions.clap]]
+version = "4.6.0"
+criteria = "safe-to-deploy"
+
 [[exemptions.clap_builder]]
 version = "4.5.59"
 criteria = "safe-to-deploy"
@@ -100,8 +112,16 @@ criteria = "safe-to-deploy"
 version = "4.5.60"
 criteria = "safe-to-deploy"
 
+[[exemptions.clap_builder]]
+version = "4.6.0"
+criteria = "safe-to-deploy"
+
 [[exemptions.clap_derive]]
 version = "4.5.55"
+criteria = "safe-to-deploy"
+
+[[exemptions.clap_derive]]
+version = "4.6.0"
 criteria = "safe-to-deploy"
 
 [[exemptions.clap_lex]]
@@ -320,6 +340,10 @@ criteria = "safe-to-deploy"
 version = "1.0.44"
 criteria = "safe-to-deploy"
 
+[[exemptions.quote]]
+version = "1.0.45"
+criteria = "safe-to-deploy"
+
 [[exemptions.r-efi]]
 version = "5.3.0"
 criteria = "safe-to-run"
@@ -376,6 +400,10 @@ criteria = "safe-to-deploy"
 version = "1.0.4"
 criteria = "safe-to-run"
 
+[[exemptions.serde_spanned]]
+version = "1.1.0"
+criteria = "safe-to-run"
+
 [[exemptions.shlex]]
 version = "1.3.0"
 criteria = "safe-to-deploy"
@@ -390,6 +418,10 @@ criteria = "safe-to-deploy"
 
 [[exemptions.syn]]
 version = "2.0.114"
+criteria = "safe-to-deploy"
+
+[[exemptions.syn]]
+version = "2.0.117"
 criteria = "safe-to-deploy"
 
 [[exemptions.target-lexicon]]
@@ -420,16 +452,48 @@ criteria = "safe-to-run"
 version = "1.0.6+spec-1.1.0"
 criteria = "safe-to-run"
 
+[[exemptions.toml]]
+version = "1.0.7+spec-1.1.0"
+criteria = "safe-to-run"
+
+[[exemptions.toml]]
+version = "1.1.0+spec-1.1.0"
+criteria = "safe-to-run"
+
 [[exemptions.toml_datetime]]
 version = "1.0.0+spec-1.1.0"
+criteria = "safe-to-run"
+
+[[exemptions.toml_datetime]]
+version = "1.0.1+spec-1.1.0"
+criteria = "safe-to-run"
+
+[[exemptions.toml_datetime]]
+version = "1.1.0+spec-1.1.0"
 criteria = "safe-to-run"
 
 [[exemptions.toml_parser]]
 version = "1.0.9+spec-1.1.0"
 criteria = "safe-to-run"
 
+[[exemptions.toml_parser]]
+version = "1.0.10+spec-1.1.0"
+criteria = "safe-to-run"
+
+[[exemptions.toml_parser]]
+version = "1.1.0+spec-1.1.0"
+criteria = "safe-to-run"
+
 [[exemptions.toml_writer]]
 version = "1.0.6+spec-1.1.0"
+criteria = "safe-to-run"
+
+[[exemptions.toml_writer]]
+version = "1.0.7+spec-1.1.0"
+criteria = "safe-to-run"
+
+[[exemptions.toml_writer]]
+version = "1.1.0+spec-1.1.0"
 criteria = "safe-to-run"
 
 [[exemptions.unicode-ident]]
@@ -542,6 +606,10 @@ criteria = "safe-to-run"
 
 [[exemptions.winnow]]
 version = "0.7.14"
+criteria = "safe-to-run"
+
+[[exemptions.winnow]]
+version = "1.0.0"
 criteria = "safe-to-run"
 
 [[exemptions.wit-bindgen]]
