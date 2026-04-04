@@ -136,6 +136,10 @@ criteria = "safe-to-deploy"
 version = "0.15.11"
 criteria = "safe-to-run"
 
+[[exemptions.console]]
+version = "0.16.3"
+criteria = "safe-to-run"
+
 [[exemptions.criterion]]
 version = "0.8.2"
 criteria = "safe-to-run"
@@ -222,6 +226,10 @@ criteria = "safe-to-deploy"
 
 [[exemptions.insta]]
 version = "1.46.3"
+criteria = "safe-to-run"
+
+[[exemptions.insta]]
+version = "1.47.0"
 criteria = "safe-to-run"
 
 [[exemptions.is_terminal_polyfill]]
