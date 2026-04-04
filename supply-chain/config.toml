@@ -232,6 +232,10 @@ criteria = "safe-to-run"
 version = "1.47.0"
 criteria = "safe-to-run"
 
+[[exemptions.insta]]
+version = "1.47.2"
+criteria = "safe-to-run"
+
 [[exemptions.is_terminal_polyfill]]
 version = "1.70.2"
 criteria = "safe-to-deploy"
@@ -324,20 +328,40 @@ criteria = "safe-to-deploy"
 version = "0.28.2"
 criteria = "safe-to-deploy"
 
+[[exemptions.pyo3]]
+version = "0.28.3"
+criteria = "safe-to-deploy"
+
 [[exemptions.pyo3-build-config]]
 version = "0.28.2"
+criteria = "safe-to-deploy"
+
+[[exemptions.pyo3-build-config]]
+version = "0.28.3"
 criteria = "safe-to-deploy"
 
 [[exemptions.pyo3-ffi]]
 version = "0.28.2"
 criteria = "safe-to-deploy"
 
+[[exemptions.pyo3-ffi]]
+version = "0.28.3"
+criteria = "safe-to-deploy"
+
 [[exemptions.pyo3-macros]]
 version = "0.28.2"
 criteria = "safe-to-deploy"
 
+[[exemptions.pyo3-macros]]
+version = "0.28.3"
+criteria = "safe-to-deploy"
+
 [[exemptions.pyo3-macros-backend]]
 version = "0.28.2"
+criteria = "safe-to-deploy"
+
+[[exemptions.pyo3-macros-backend]]
+version = "0.28.3"
 criteria = "safe-to-deploy"
 
 [[exemptions.python3-dll-a]]
@@ -412,6 +436,10 @@ criteria = "safe-to-run"
 version = "1.1.0"
 criteria = "safe-to-run"
 
+[[exemptions.serde_spanned]]
+version = "1.1.1"
+criteria = "safe-to-run"
+
 [[exemptions.shlex]]
 version = "1.3.0"
 criteria = "safe-to-deploy"
@@ -468,6 +496,10 @@ criteria = "safe-to-run"
 version = "1.1.0+spec-1.1.0"
 criteria = "safe-to-run"
 
+[[exemptions.toml]]
+version = "1.1.2+spec-1.1.0"
+criteria = "safe-to-run"
+
 [[exemptions.toml_datetime]]
 version = "1.0.0+spec-1.1.0"
 criteria = "safe-to-run"
@@ -478,6 +510,10 @@ criteria = "safe-to-run"
 
 [[exemptions.toml_datetime]]
 version = "1.1.0+spec-1.1.0"
+criteria = "safe-to-run"
+
+[[exemptions.toml_datetime]]
+version = "1.1.1+spec-1.1.0"
 criteria = "safe-to-run"
 
 [[exemptions.toml_parser]]
@@ -492,6 +528,10 @@ criteria = "safe-to-run"
 version = "1.1.0+spec-1.1.0"
 criteria = "safe-to-run"
 
+[[exemptions.toml_parser]]
+version = "1.1.2+spec-1.1.0"
+criteria = "safe-to-run"
+
 [[exemptions.toml_writer]]
 version = "1.0.6+spec-1.1.0"
 criteria = "safe-to-run"
@@ -502,6 +542,10 @@ criteria = "safe-to-run"
 
 [[exemptions.toml_writer]]
 version = "1.1.0+spec-1.1.0"
+criteria = "safe-to-run"
+
+[[exemptions.toml_writer]]
+version = "1.1.1+spec-1.1.0"
 criteria = "safe-to-run"
 
 [[exemptions.unicode-ident]]
