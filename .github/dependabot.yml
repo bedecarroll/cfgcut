@@ -6,6 +6,10 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 10
+    cooldown:
+      default-days: 7
+      semver-minor-days: 7
+      semver-major-days: 30
     groups:
       rust-deps:
         patterns:
@@ -19,6 +23,10 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 10
+    cooldown:
+      default-days: 7
+      semver-minor-days: 7
+      semver-major-days: 30
     groups:
       python-deps:
         patterns:
@@ -31,6 +39,8 @@ updates:
     directory: "/"
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 7
     groups:
       github-actions:
         patterns:
