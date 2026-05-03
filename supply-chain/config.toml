@@ -52,6 +52,10 @@ criteria = "safe-to-run"
 version = "2.2.0"
 criteria = "safe-to-run"
 
+[[exemptions.assert_cmd]]
+version = "2.2.1"
+criteria = "safe-to-run"
+
 [[exemptions.autocfg]]
 version = "1.5.0"
 criteria = "safe-to-deploy"
