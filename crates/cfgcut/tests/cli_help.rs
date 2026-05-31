@@ -35,7 +35,9 @@ fn help_mentions_matching_defaults() {
         .assert()
         .success()
         .stdout(contains("implicitly anchored"))
-        .stdout(contains("-a/--anonymize"))
+        .stdout(contains("--within"))
+        .stdout(contains("--require"))
+        .stdout(contains("-a, --anonymize"))
         .stdout(contains("--tokens"));
 }
 

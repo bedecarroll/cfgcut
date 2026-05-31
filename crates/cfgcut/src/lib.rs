@@ -75,6 +75,11 @@ pub enum CfgcutError {
         /// The raw pattern text supplied by the caller.
         raw: String,
     },
+    /// Scoped projection flags were incomplete.
+    IncompleteScopedProjection {
+        /// The missing part of the scoped projection request.
+        missing: &'static str,
+    },
     /// The requested token destination is not supported.
     UnsupportedTokenDestination,
     /// Serializing structured output failed.
@@ -128,6 +133,9 @@ impl fmt::Display for CfgcutError {
             Self::EmptyPattern { raw } => {
                 write!(f, "match pattern must not be empty (input: '{raw}')")
             }
+            Self::IncompleteScopedProjection { missing } => {
+                write!(f, "scoped projection requires {missing}")
+            }
             Self::UnsupportedTokenDestination => f.write_str("unsupported token destination"),
             Self::Serialization { source } => {
                 write!(f, "failed to serialize token record: {source}")
@@ -149,6 +157,7 @@ impl std::error::Error for CfgcutError {
             | Self::GlobPatternNoMatches { .. }
             | Self::NoPatternsProvided { .. }
             | Self::EmptyPattern { .. }
+            | Self::IncompleteScopedProjection { .. }
             | Self::UnsupportedTokenDestination => None,
         }
     }
@@ -164,6 +173,8 @@ impl From<serde_json::Error> for CfgcutError {
 #[derive(Debug, Clone)]
 pub struct RunRequest {
     matches: Vec<String>,
+    within: Option<String>,
+    requirements: Vec<String>,
     comment_handling: CommentHandling,
     output_mode: OutputMode,
     render_order: RenderOrder,
@@ -301,6 +312,18 @@ impl RunRequest {
         &self.matches
     }
 
+    /// The parent scope used for scoped projection, if configured.
+    #[must_use]
+    pub fn within(&self) -> Option<&str> {
+        self.within.as_deref()
+    }
+
+    /// Descendant predicates required under each scoped projection parent.
+    #[must_use]
+    pub fn requirements(&self) -> &[String] {
+        &self.requirements
+    }
+
     /// The input paths gathered for this run.
     #[must_use]
     pub fn inputs(&self) -> &[PathBuf] {
@@ -336,6 +359,8 @@ impl RunRequest {
 #[derive(Debug, Clone)]
 pub struct RunRequestBuilder {
     matches: Vec<String>,
+    within: Option<String>,
+    requirements: Vec<String>,
     comment_handling: CommentHandling,
     output_mode: OutputMode,
     render_order: RenderOrder,
@@ -348,6 +373,8 @@ impl Default for RunRequestBuilder {
     fn default() -> Self {
         Self {
             matches: Vec::new(),
+            within: None,
+            requirements: Vec::new(),
             comment_handling: CommentHandling::Exclude,
             output_mode: OutputMode::Normal,
             render_order: RenderOrder::Original,
@@ -363,6 +390,20 @@ impl RunRequestBuilder {
     #[must_use]
     pub fn matches(mut self, matches: Vec<String>) -> Self {
         self.matches = matches;
+        self
+    }
+
+    /// Configure a parent scope for predicate/projection matching.
+    #[must_use]
+    pub fn within(mut self, within: Option<String>) -> Self {
+        self.within = within;
+        self
+    }
+
+    /// Replace any existing scoped projection requirements.
+    #[must_use]
+    pub fn requirements(mut self, requirements: Vec<String>) -> Self {
+        self.requirements = requirements;
         self
     }
 
@@ -413,6 +454,8 @@ impl RunRequestBuilder {
     pub fn build(self) -> RunRequest {
         RunRequest {
             matches: self.matches,
+            within: self.within,
+            requirements: self.requirements,
             comment_handling: self.comment_handling,
             output_mode: self.output_mode,
             render_order: self.render_order,
@@ -433,6 +476,50 @@ fn compile_cli_patterns(matches: &[String]) -> Result<Option<Vec<Pattern>>, Cfgc
         compiled.push(Pattern::parse(raw)?);
     }
     Ok(Some(compiled))
+}
+
+struct ScopedPatterns {
+    within: Pattern,
+    requirements: Vec<Pattern>,
+    projections: Vec<Pattern>,
+}
+
+fn compile_scoped_patterns(request: &RunRequest) -> Result<Option<ScopedPatterns>, CfgcutError> {
+    if request.within.is_none() && request.requirements.is_empty() {
+        return Ok(None);
+    }
+
+    let within = request
+        .within
+        .as_deref()
+        .ok_or(CfgcutError::IncompleteScopedProjection {
+            missing: "--within",
+        })?;
+
+    if request.requirements.is_empty() {
+        return Err(CfgcutError::IncompleteScopedProjection {
+            missing: "at least one --require",
+        });
+    }
+    if request.matches.is_empty() {
+        return Err(CfgcutError::IncompleteScopedProjection {
+            missing: "at least one -m/--match projection",
+        });
+    }
+
+    Ok(Some(ScopedPatterns {
+        within: Pattern::parse(within)?,
+        requirements: compile_patterns(&request.requirements)?,
+        projections: compile_patterns(&request.matches)?,
+    }))
+}
+
+fn compile_patterns(patterns: &[String]) -> Result<Vec<Pattern>, CfgcutError> {
+    let mut compiled = Vec::with_capacity(patterns.len());
+    for raw in patterns {
+        compiled.push(Pattern::parse(raw)?);
+    }
+    Ok(compiled)
 }
 
 struct ParsedFile {
@@ -525,6 +612,7 @@ fn compile_inline_patterns(
 pub fn run(request: &RunRequest) -> Result<RunOutput, CfgcutError> {
     let files = collect_files(&request.inputs)?;
     let cli_patterns = compile_cli_patterns(&request.matches)?;
+    let scoped_patterns = compile_scoped_patterns(request)?;
     let include_comments = matches!(request.comment_handling, CommentHandling::Include);
     let anonymize = matches!(request.anonymization, Anonymization::Enabled);
 
@@ -546,23 +634,38 @@ pub fn run(request: &RunRequest) -> Result<RunOutput, CfgcutError> {
             .as_ref()
             .map(|_| TokenAccumulator::new(dialect_kind));
 
-        let (pattern_set, warning) =
-            resolve_patterns(cli_patterns.as_deref(), inline_matches.as_deref(), &path)?;
-        if let Some(message) = warning {
-            warnings.push(message);
-        }
-
         let mut indices = BTreeSet::new();
         let mut matched_file = false;
 
-        for pattern in pattern_set.iter() {
-            let mut accumulator = MatchAccumulator::new(&parsed);
-            pattern.apply(&parsed, &mut accumulator);
+        if let Some(scoped) = &scoped_patterns {
+            if inline_matches.is_some() {
+                warnings.push(format!(
+                    "{}: ignoring inline matches because CLI patterns were provided",
+                    path.display()
+                ));
+            }
+            let accumulator = apply_scoped_patterns(&parsed, scoped);
             if accumulator.matched {
                 matched_any = true;
                 matched_file = true;
             }
             indices.extend(accumulator.indices);
+        } else {
+            let (pattern_set, warning) =
+                resolve_patterns(cli_patterns.as_deref(), inline_matches.as_deref(), &path)?;
+            if let Some(message) = warning {
+                warnings.push(message);
+            }
+
+            for pattern in pattern_set.iter() {
+                let mut accumulator = MatchAccumulator::new(&parsed);
+                pattern.apply(&parsed, &mut accumulator);
+                if accumulator.matched {
+                    matched_any = true;
+                    matched_file = true;
+                }
+                indices.extend(accumulator.indices);
+            }
         }
 
         if matched_file {
@@ -760,22 +863,31 @@ impl Pattern {
             return;
         }
 
-        let roots: Vec<usize> = config
-            .lines
-            .iter()
-            .enumerate()
-            .filter_map(|(idx, line)| {
-                if line.parent.is_none() {
-                    Some(idx)
-                } else {
-                    None
-                }
-            })
-            .collect();
+        let roots = root_indices(config);
+        self.apply_from_roots(config, &roots, accumulator);
+    }
 
+    fn apply_from_roots(
+        &self,
+        config: &ParsedConfig,
+        roots: &[usize],
+        accumulator: &mut MatchAccumulator,
+    ) {
         for root in roots {
-            self.walk(config, root, 0, accumulator);
+            self.walk(config, *root, 0, accumulator);
         }
+    }
+
+    fn terminal_matches_from_roots(
+        &self,
+        config: &ParsedConfig,
+        roots: &[usize],
+    ) -> BTreeSet<usize> {
+        let mut matches = BTreeSet::new();
+        for &root in roots {
+            self.collect_terminals(config, root, 0, &mut matches);
+        }
+        matches
     }
 
     fn walk(
@@ -819,6 +931,94 @@ impl Pattern {
             }
         }
     }
+
+    fn collect_terminals(
+        &self,
+        config: &ParsedConfig,
+        node_idx: usize,
+        segment_idx: usize,
+        matches: &mut BTreeSet<usize>,
+    ) {
+        if segment_idx >= self.segments.len() {
+            return;
+        }
+
+        match &self.segments[segment_idx] {
+            PatternSegment::DescendAll => {
+                matches.insert(node_idx);
+            }
+            PatternSegment::Match { regex, target } => {
+                let line = &config.lines[node_idx];
+                if !target.matches(line.kind) {
+                    return;
+                }
+                if let Some(candidate) = line.match_text.as_deref() {
+                    if !regex.is_match(candidate) {
+                        return;
+                    }
+                } else {
+                    return;
+                }
+
+                if segment_idx + 1 == self.segments.len() {
+                    matches.insert(node_idx);
+                } else if matches!(self.segments[segment_idx + 1], PatternSegment::DescendAll) {
+                    self.collect_terminals(config, node_idx, segment_idx + 1, matches);
+                } else {
+                    for &child in &config.children[node_idx] {
+                        self.collect_terminals(config, child, segment_idx + 1, matches);
+                    }
+                }
+            }
+        }
+    }
+}
+
+fn root_indices(config: &ParsedConfig) -> Vec<usize> {
+    config
+        .lines
+        .iter()
+        .enumerate()
+        .filter_map(|(idx, line)| {
+            if line.parent.is_none() {
+                Some(idx)
+            } else {
+                None
+            }
+        })
+        .collect()
+}
+
+fn apply_scoped_patterns<'a>(
+    config: &'a ParsedConfig,
+    scoped: &ScopedPatterns,
+) -> MatchAccumulator<'a> {
+    let roots = root_indices(config);
+    let scope_nodes = scoped.within.terminal_matches_from_roots(config, &roots);
+    let mut output = MatchAccumulator::new(config);
+
+    for scope in scope_nodes {
+        let child_roots = &config.children[scope];
+        let has_requirements = scoped.requirements.iter().all(|requirement| {
+            !requirement
+                .terminal_matches_from_roots(config, child_roots)
+                .is_empty()
+        });
+        if !has_requirements {
+            continue;
+        }
+
+        for projection in &scoped.projections {
+            let mut accumulator = MatchAccumulator::new(config);
+            projection.apply_from_roots(config, child_roots, &mut accumulator);
+            if accumulator.matched {
+                output.matched = true;
+            }
+            output.indices.extend(accumulator.indices);
+        }
+    }
+
+    output
 }
 
 fn create_segment(

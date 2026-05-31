@@ -10,7 +10,7 @@ use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyModule};
 
 #[pyfunction]
-#[pyo3(signature = (matches, inputs, with_comments = false, sort_by_path = false, quiet = false, anonymize = false, tokens = false, tokens_out = None))]
+#[pyo3(signature = (matches, inputs, with_comments = false, sort_by_path = false, quiet = false, anonymize = false, tokens = false, tokens_out = None, within = None, requirements = None))]
 #[expect(
     clippy::too_many_arguments,
     reason = "Python binding mirrors the CLI surface without breaking parameters"
@@ -25,6 +25,8 @@ fn run_cfg(
     anonymize: bool,
     tokens: bool,
     tokens_out: Option<String>,
+    within: Option<String>,
+    requirements: Option<Vec<String>>,
 ) -> PyResult<Py<PyAny>> {
     if matches.is_empty() {
         return Err(PyRuntimeError::new_err(
@@ -45,6 +47,8 @@ fn run_cfg(
 
     let request = RunRequest::builder()
         .matches(matches)
+        .within(within)
+        .requirements(requirements.unwrap_or_default())
         .comment_handling(if with_comments {
             CommentHandling::Include
         } else {
