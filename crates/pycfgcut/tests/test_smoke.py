@@ -32,6 +32,40 @@ def test_with_comments_includes_comment_lines(tmp_path: Path):
     assert "## comment marker" in result["stdout"]
 
 
+def test_scoped_projection_filters_siblings(tmp_path: Path):
+    config = tmp_path / "access.cfg"
+    config.write_text(
+        "\n".join(
+            [
+                "interface GigabitEthernet1/0/1",
+                " switchport access vlan 120",
+                " switchport port-security mac-address sticky",
+                "!",
+                "interface GigabitEthernet1/0/2",
+                " switchport access vlan 130",
+                "!",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    result = run_cfg(
+        [
+            "switchport access vlan .*",
+            "switchport port-security mac-address sticky",
+        ],
+        [str(config)],
+        within="interface .*",
+        requirements=["switchport port-security mac-address sticky"],
+    )
+
+    assert result["matched"] is True
+    assert "interface GigabitEthernet1/0/1" in result["stdout"]
+    assert "switchport access vlan 120" in result["stdout"]
+    assert "interface GigabitEthernet1/0/2" not in result["stdout"]
+    assert "switchport access vlan 130" not in result["stdout"]
+
+
 def test_tokens_written_to_file(tmp_path: Path):
     fixture = _fixture_path("arista_eos/sample.conf")
     output = tmp_path / "tokens.jsonl"

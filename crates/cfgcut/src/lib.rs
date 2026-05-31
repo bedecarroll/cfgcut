@@ -638,6 +638,12 @@ pub fn run(request: &RunRequest) -> Result<RunOutput, CfgcutError> {
         let mut matched_file = false;
 
         if let Some(scoped) = &scoped_patterns {
+            if inline_matches.is_some() {
+                warnings.push(format!(
+                    "{}: ignoring inline matches because CLI patterns were provided",
+                    path.display()
+                ));
+            }
             let accumulator = apply_scoped_patterns(&parsed, scoped);
             if accumulator.matched {
                 matched_any = true;

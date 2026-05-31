@@ -54,3 +54,24 @@ fn inline_matches_emit_warning_when_cli_provided() {
         .stdout(predicate::str::diff(expected))
         .stderr(predicate::str::contains("ignoring inline matches"));
 }
+
+#[test]
+fn inline_matches_emit_warning_when_scoped_cli_provided() {
+    let path = fixture("cisco_ios/inline.conf");
+    let body = "interface GigabitEthernet0/1\n description uplink\n";
+    let expected = expected_with_header("!", &path, body);
+    cfgcut_cmd()
+        .args([
+            "--within",
+            "interface .*",
+            "--require",
+            "description uplink",
+            "-m",
+            "description uplink",
+            path.to_str().unwrap(),
+        ])
+        .assert()
+        .success()
+        .stdout(predicate::str::diff(expected))
+        .stderr(predicate::str::contains("ignoring inline matches"));
+}
