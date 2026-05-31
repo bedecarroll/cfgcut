@@ -18,7 +18,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Run zizmor
-        uses: zizmorcore/zizmor-action@a166459515afca5fef65cc68068d8cc6c0b0b17a # v0.5.5
+        uses: zizmorcore/zizmor-action@a16621b09c6db4281f81a93cb393b05dcd7b7165 # v0.5.5
         with:
           advanced-security: false
           config: .github/zizmor.yml
