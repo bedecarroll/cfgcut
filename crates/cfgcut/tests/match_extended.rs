@@ -142,6 +142,79 @@ fn multiple_match_patterns_union_results() {
 }
 
 #[test]
+fn scoped_projection_filters_ios_sibling_lines_by_required_descendant() {
+    let tmp = tempdir().unwrap();
+    let path = tmp.path().join("access.cfg");
+    fs::write(
+        &path,
+        "\
+interface GigabitEthernet1/0/1
+ switchport access vlan 120
+ switchport port-security mac-address sticky
+ switchport port-security mac-address sticky 0011.2233.4455
+!
+interface GigabitEthernet1/0/2
+ switchport access vlan 130
+!
+",
+    )
+    .unwrap();
+    let path_str = path.to_string_lossy().into_owned();
+
+    let mut cmd = cfgcut_cmd();
+    cmd.args([
+        "--within",
+        "interface .*",
+        "--require",
+        "switchport port-security mac-address sticky(?: .*)?",
+        "-m",
+        "switchport access vlan .*",
+        "-m",
+        "switchport port-security mac-address sticky(?: .*)?",
+        path_str.as_str(),
+    ])
+    .assert()
+    .success()
+    .stdout(predicate::str::contains(header("!", &path)))
+    .stdout(predicate::str::contains("interface GigabitEthernet1/0/1"))
+    .stdout(predicate::str::contains("switchport access vlan 120"))
+    .stdout(predicate::str::contains(
+        "switchport port-security mac-address sticky 0011.2233.4455",
+    ))
+    .stdout(predicate::str::contains("interface GigabitEthernet1/0/2").not())
+    .stdout(predicate::str::contains("switchport access vlan 130").not());
+}
+
+#[test]
+fn scoped_projection_filters_nested_junos_sibling_lines() {
+    let path = fixture_path("juniper_junos/full_lab.conf");
+    let header_line = header("##", &path);
+    let path_str = path.to_string_lossy().into_owned();
+
+    let mut cmd = cfgcut_cmd();
+    cmd.args([
+        "--within",
+        "interfaces||ge-.*",
+        "--require",
+        "unit 0||family ethernet-switching",
+        "-m",
+        "description .*",
+        "-m",
+        "unit 0||family ethernet-switching||vlan||members .*",
+        path_str.as_str(),
+    ])
+    .assert()
+    .success()
+    .stdout(predicate::str::contains(&header_line))
+    .stdout(predicate::str::contains("interfaces {"))
+    .stdout(predicate::str::contains("ge-0/0/1 {"))
+    .stdout(predicate::str::contains("description \"user access\";"))
+    .stdout(predicate::str::contains("members [ users voice ];"))
+    .stdout(predicate::str::contains("ge-0/0/0 {").not())
+    .stdout(predicate::str::contains("description \"to core\";").not());
+}
+
+#[test]
 fn directory_input_collects_files() {
     let tmp = tempdir().unwrap();
     let dir = tmp.path();

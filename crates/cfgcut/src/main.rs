@@ -14,7 +14,7 @@ use cfgcut::{
     name = "cfgcut",
     about = "Extract configuration sections from text files.",
     long_about = None,
-    after_help = "Match segments are separated with '||' and implicitly anchored. Append '|>>|' to include descendant nodes, use '|#|' for comments with -c/--with-comments, and enable -a/--anonymize to scramble sensitive tokens while keeping structure intact.",
+    after_help = "Match segments are separated with '||' and implicitly anchored. Append '|>>|' to include descendant nodes, use '|#|' for comments with -c/--with-comments, and combine --within/--require with -m to project siblings from qualifying parent scopes.",
     version
 )]
 #[expect(
@@ -30,6 +30,14 @@ struct Cli {
         value_name = "MATCH"
     )]
     matches: Vec<String>,
+
+    /// Parent scope used for descendant predicates and projected sibling output
+    #[arg(long = "within", value_name = "MATCH")]
+    within: Option<String>,
+
+    /// Descendant match required under each --within scope
+    #[arg(long = "require", action = ArgAction::Append, value_name = "MATCH")]
+    requirements: Vec<String>,
 
     /// Include comments in the output stream
     #[arg(short = 'c', long = "with-comments")]
@@ -65,6 +73,8 @@ fn main() {
 
     let Cli {
         matches,
+        within,
+        requirements,
         with_comments,
         sort_by_path,
         quiet,
@@ -76,6 +86,8 @@ fn main() {
 
     let request = RunRequest::builder()
         .matches(matches)
+        .within(within)
+        .requirements(requirements)
         .comment_handling(if with_comments {
             CommentHandling::Include
         } else {
