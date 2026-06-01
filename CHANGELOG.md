@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.4.0 - 2026-06-01
+
+- add scoped sibling projection with `--within` and repeatable `--require`, letting matches emit selected sibling descendants only from parent scopes that satisfy required descendant predicates
+- expose the scoped matching options through `pycfgcut.run_cfg` so Python callers can use the same `--within` and `--require` behavior as the CLI
+- document scoped projection in the usage guide and cover IOS plus nested Junos cases in the test suite
+- update supply-chain and workflow dependencies, including `assert_cmd` 2.2.2, `serde_json` 1.0.150, `taiki-e/install-action` 2.78.0, and `zizmor-action` 0.5.5
+
 ## 0.3.2 - 2025-10-17
 
 - fix Cisco banner parsing across IOS, IOS-XE, IOS-XR, NX-OS, and other indent dialects by tracking custom delimiters
