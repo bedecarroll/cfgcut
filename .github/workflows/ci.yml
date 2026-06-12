@@ -79,7 +79,7 @@ jobs:
         with:
           version: 2025.10.5
       - name: Install cargo-fuzz
-        run: cargo install cargo-fuzz --force
+        run: cargo install cargo-fuzz --locked --force
       - name: Install nightly toolchain
         run: rustup toolchain install nightly --profile minimal
       - name: Parser fuzz smoke
