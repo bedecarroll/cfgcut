@@ -33,7 +33,7 @@ jobs:
         with:
           version: 2025.10.5
       - name: Install tooling
-        uses: taiki-e/install-action@cde8c9e634f4a17bc06b61413ac0ef75450eac46
+        uses: taiki-e/install-action@7a79fe8c3a13344501c80d99cae481c1c9085912
         with:
           tool: >-
             cargo-deny@0.19.0,
