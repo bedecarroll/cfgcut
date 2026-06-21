@@ -432,12 +432,20 @@ criteria = "safe-to-run"
 version = "1.12.3"
 criteria = "safe-to-deploy"
 
+[[exemptions.regex]]
+version = "1.12.4"
+criteria = "safe-to-deploy"
+
 [[exemptions.regex-automata]]
 version = "0.4.13"
 criteria = "safe-to-deploy"
 
 [[exemptions.regex-syntax]]
 version = "0.8.8"
+criteria = "safe-to-deploy"
+
+[[exemptions.regex-syntax]]
+version = "0.8.11"
 criteria = "safe-to-deploy"
 
 [[exemptions.rustix]]
