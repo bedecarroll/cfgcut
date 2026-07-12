@@ -1,0 +1,28 @@
+[package]
+name = "pycfgcut"
+version = "0.4.0"
+edition = "2024"
+publish = false
+description = "Python bindings for cfgcut, the deterministic configuration slicer"
+license = "MIT"
+homepage = "https://cfgcut.bedecarroll.com"
+repository = "https://github.com/bedecarroll/cfgcut"
+documentation = "https://cfgcut.bedecarroll.com"
+readme = "README.md"
+keywords = ["networking", "configuration", "python"]
+categories = ["network-programming", "command-line-utilities"]
+
+[lints]
+workspace = true
+
+[lib]
+name = "pycfgcut"
+crate-type = ["cdylib"]
+
+[dependencies]
+pyo3 = { workspace = true, features = ["extension-module", "abi3-py39", "macros", "generate-import-lib"] }
+cfgcut = { path = "../cfgcut", version = "0.4.0" }
+serde_json = { workspace = true }
+
+[target.'cfg(windows)'.build-dependencies]
+python3-dll-a = "0.2"

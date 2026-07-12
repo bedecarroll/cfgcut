@@ -1,0 +1,9 @@
+---
+source: crates/cfgcut/tests/match_snapshots.rs
+expression: snapshot
+---
+input: tests/fixtures/cisco_ios/full_lab.conf
+match: hostname lab-edge
+---
+! cfgcut matches for full_lab.conf
+hostname lab-edge

@@ -1,0 +1,13 @@
+---
+source: crates/cfgcut/tests/match_snapshots.rs
+expression: snapshot
+---
+input: tests/fixtures/juniper_junos_set/full_lab.set
+match: interfaces||ge-0/0/0||unit 0||family inet||address 10.0.0.1/30
+---
+# cfgcut matches for full_lab.set
+set interfaces
+set interfaces ge-0/0/0
+set interfaces ge-0/0/0 unit 0
+set interfaces ge-0/0/0 unit 0 family inet
+set interfaces ge-0/0/0 unit 0 family inet address 10.0.0.1/30

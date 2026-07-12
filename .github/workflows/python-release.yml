@@ -1,0 +1,159 @@
+# Builds and publishes the pycfgcut wheels/sdist independently from the cargo-dist release flow.
+
+name: Python Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  python-artifacts:
+    name: python (${{ matrix.os }} / py${{ matrix.python-version }})
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            python-version: "3.12"
+            python-arch: x64
+            rust-target: ""
+            build-args: ""
+            produce-sdist: true
+            artifact-name: wheels-linux-x86_64
+          - os: macos-14
+            python-version: "3.12"
+            python-arch: arm64
+            rust-target: ""
+            build-args: ""
+            produce-sdist: false
+            artifact-name: wheels-macos-aarch64
+          - os: macos-13
+            python-version: "3.12"
+            python-arch: x64
+            rust-target: x86_64-apple-darwin
+            build-args: "--target x86_64-apple-darwin"
+            produce-sdist: false
+            artifact-name: wheels-macos-x86_64
+          - os: windows-latest
+            python-version: "3.12"
+            python-arch: x64
+            rust-target: ""
+            build-args: ""
+            produce-sdist: false
+            artifact-name: wheels-windows-x86_64
+
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        with:
+          persist-credentials: false
+
+      - uses: dtolnay/rust-toolchain@fa04a1451ff1842e2626ccb99004d0195b455a88
+        with:
+          toolchain: 1.90
+          targets: ${{ matrix.rust-target }}
+
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: ${{ matrix.python-version }}
+          architecture: ${{ matrix.python-arch }}
+      - name: Install uv
+        shell: bash
+        run: python -m pip install --upgrade uv
+
+      - name: Prepare virtualenv
+        shell: bash
+        run: |
+          uv venv --clear --seed .venv --python "${{ matrix.python-version }}"
+          if [ -f .venv/Scripts/python.exe ]; then
+            echo "VENV_PYTHON=$PWD/.venv/Scripts/python.exe" >> "$GITHUB_ENV"
+          else
+            echo "VENV_PYTHON=$PWD/.venv/bin/python" >> "$GITHUB_ENV"
+          fi
+
+      - name: Install Python tooling
+        shell: bash
+        run: |
+          uv pip install --python "$VENV_PYTHON" "maturin>=1.6,<2.0" pytest
+
+      - name: Build extension in develop mode
+        shell: bash
+        run: |
+          "$VENV_PYTHON" -m maturin develop --manifest-path crates/pycfgcut/Cargo.toml --release --locked ${{ matrix.build-args }}
+
+      - name: Run pytest (editable build)
+        shell: bash
+        run: |
+          "$VENV_PYTHON" -m pytest crates/pycfgcut/tests
+
+      - name: Build wheel artifact
+        shell: bash
+        run: |
+          rm -rf dist
+          "$VENV_PYTHON" -m maturin build --manifest-path crates/pycfgcut/Cargo.toml --release --locked --out dist ${{ matrix.build-args }}
+
+      - name: Build sdist
+        if: matrix.produce-sdist
+        shell: bash
+        run: |
+          "$VENV_PYTHON" -m maturin build --manifest-path crates/pycfgcut/Cargo.toml --release --locked --out dist --sdist
+
+      - name: Install wheel
+        shell: bash
+        run: |
+          "$VENV_PYTHON" -m pip uninstall -y pycfgcut || true
+          "$VENV_PYTHON" -m pip install dist/pycfgcut-*.whl
+
+      - name: Verify wheel import
+        shell: bash
+        run: |
+          "$VENV_PYTHON" - <<'PY'
+          from importlib import metadata
+          from pathlib import Path
+          import pycfgcut
+
+          assert metadata.version("pycfgcut") == pycfgcut.__version__
+          fixture = Path("tests/fixtures/juniper_junos/sample.conf").resolve()
+          res = pycfgcut.run_cfg(["interfaces|>>|"], [str(fixture)])
+          assert res["matched"]
+          PY
+
+      - name: Run pytest (wheel install)
+        shell: bash
+        run: |
+          "$VENV_PYTHON" -m pytest crates/pycfgcut/tests
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: ${{ matrix.artifact-name }}
+          path: dist
+
+  publish-pypi:
+    name: Publish to PyPI
+    needs:
+      - python-artifacts
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    environment:
+      name: pypi
+    permissions:
+      id-token: write
+      actions: read
+      contents: read
+    steps:
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          pattern: wheels-*
+          path: dist
+          merge-multiple: true
+      - name: Publish artifacts
+        uses: pypa/gh-action-pypi-publish@cef221092ed1bacb1cc03d23a2d87d1d172e277b
+        with:
+          packages-dir: dist

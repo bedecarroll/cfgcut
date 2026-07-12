@@ -1,0 +1,16 @@
+---
+source: crates/cfgcut/tests/match_snapshots.rs
+expression: snapshot
+---
+input: tests/fixtures/juniper_junos_set/full_lab.set
+match: firewall||family inet||filter||ACCESS||term ALLOW-SSH|>>|
+---
+# cfgcut matches for full_lab.set
+set firewall
+set firewall family inet
+set firewall family inet filter
+set firewall family inet filter ACCESS
+set firewall family inet filter ACCESS term ALLOW-SSH
+set firewall family inet filter ACCESS term ALLOW-SSH from source-address
+set firewall family inet filter ACCESS term ALLOW-SSH from source-address 10.20.0.0/16
+set firewall family inet filter ACCESS term ALLOW-SSH then accept

@@ -1,0 +1,13 @@
+set system host-name lab-junos-set
+set system services ssh
+set interfaces ge-0/0/0 description "to core"
+set interfaces ge-0/0/0 unit 0 family inet address 10.0.0.1/30
+set interfaces ge-0/0/1 description "user access"
+set interfaces ge-0/0/1 unit 0 family ethernet-switching vlan members users
+set interfaces ge-0/0/1 unit 0 family ethernet-switching vlan members voice
+set routing-options static route 192.0.2.0/24 next-hop 10.0.0.254
+set protocols bgp group core type external
+set protocols bgp group core neighbor 10.0.0.2 peer-as 65001
+set firewall family inet filter ACCESS term ALLOW-SSH from source-address 10.20.0.0/16
+set firewall family inet filter ACCESS term ALLOW-SSH then accept
+set firewall family inet filter ACCESS term DEFAULT then reject

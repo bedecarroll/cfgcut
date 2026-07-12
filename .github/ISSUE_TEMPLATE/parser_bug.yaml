@@ -1,0 +1,69 @@
+name: Parser bug
+description: File a parser or matcher defect with reproducible configuration snippets.
+title: "bug: <short summary>"
+labels:
+  - bug
+  - parser
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting an issue with cfgcut! Please provide as much detail as possible so we can reproduce and fix the problem quickly.
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: A concise description of the unexpected behaviour.
+      placeholder: "Describe what went wrong..."
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction steps
+      description: >-
+        Include the exact `cfgcut` command(s), match expressions, and minimal configuration snippet(s) needed to trigger the bug. Mask or anonymize sensitive data.
+      placeholder: |
+        ```
+        cfgcut -m 'interfaces||ge-0/0/0|>>|' path/to/device.conf
+        ```
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected result
+      description: What output or behaviour did you expect instead?
+      placeholder: "What should have happened?"
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual result
+      description: Paste the observed output, stack trace, or error message.
+      render: shell
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: cfgcut version
+      description: Output of `cfgcut --version`.
+      placeholder: "cfgcut 0.1.0"
+    validations:
+      required: true
+  - type: input
+    id: platform
+    attributes:
+      label: Operating system
+      description: OS and version where the issue occurs.
+      placeholder: "Ubuntu 24.04"
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Additional context
+      description: Links to related issues, configs with proprietary elements removed, or other observations.
+      placeholder: "Anything else we should know?"

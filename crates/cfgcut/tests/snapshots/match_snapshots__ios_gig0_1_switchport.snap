@@ -1,0 +1,10 @@
+---
+source: crates/cfgcut/tests/match_snapshots.rs
+expression: snapshot
+---
+input: tests/fixtures/cisco_ios/full_lab.conf
+match: interface GigabitEthernet0/1||switchport trunk allowed vlan 10,20,30
+---
+! cfgcut matches for full_lab.conf
+interface GigabitEthernet0/1
+ switchport trunk allowed vlan 10,20,30

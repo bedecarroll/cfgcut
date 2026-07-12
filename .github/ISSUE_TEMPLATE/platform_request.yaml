@@ -1,0 +1,43 @@
+name: Platform support request
+description: Request support for a new vendor or platform.
+title: "platform: <vendor/platform name>"
+labels:
+  - enhancement
+  - dialect
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Tell us about the platform you'd like cfgcut to support. Include links to public documentation or sample configurations so contributors can reproduce the format.
+  - type: input
+    id: vendor
+    attributes:
+      label: Vendor / platform
+      description: Name of the vendor (and OS variant if applicable).
+      placeholder: "Aruba CX"
+    validations:
+      required: true
+  - type: textarea
+    id: motivation
+    attributes:
+      label: Use case / motivation
+      description: Explain how cfgcut would be used with this platform and why the support matters.
+    validations:
+      required: true
+  - type: textarea
+    id: samples
+    attributes:
+      label: Sample configuration links
+      description: URLs to documentation, Git repos, or gist snippets that show real-world configs. If you attach inline snippets, remove or anonymize sensitive data.
+    validations:
+      required: true
+  - type: textarea
+    id: quirks
+    attributes:
+      label: Known quirks
+      description: Comment syntax, hierarchy rules, or other specifics we should be aware of.
+  - type: textarea
+    id: helpers
+    attributes:
+      label: Willing to help?
+      description: Let us know if you can provide more fixtures, test cases, or a PR.

@@ -1,0 +1,10 @@
+---
+source: crates/cfgcut/tests/match_snapshots.rs
+expression: snapshot
+---
+input: tests/fixtures/cisco_ios/full_lab.conf
+match: line vty 0 4|>>|
+---
+! cfgcut matches for full_lab.conf
+line vty 0 4
+ transport input ssh

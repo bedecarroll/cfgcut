@@ -1,0 +1,14 @@
+---
+source: crates/cfgcut/tests/match_snapshots.rs
+expression: snapshot
+---
+input: tests/fixtures/juniper_junos_set/full_lab.set
+match: routing-options||static||route||192.0.2.0/24|>>|
+---
+# cfgcut matches for full_lab.set
+set routing-options
+set routing-options static
+set routing-options static route
+set routing-options static route 192.0.2.0/24
+set routing-options static route 192.0.2.0/24 next-hop
+set routing-options static route 192.0.2.0/24 next-hop 10.0.0.254
