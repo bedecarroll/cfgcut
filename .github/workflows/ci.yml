@@ -33,7 +33,7 @@ jobs:
         with:
           version: 2025.10.5
       - name: Install tooling
-        uses: taiki-e/install-action@682e7d9e49c5e653d371fc6adbda67653461378a
+        uses: taiki-e/install-action@c7eb1735f09259a5035e8e5d44b1406b1cddc0fb
         with:
           tool: >-
             cargo-deny@0.19.0,
@@ -47,7 +47,7 @@ jobs:
       - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
         with:
           python-version: '3.12'
-      - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
+      - uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990
       - name: Run checks
         run: mise run check
       - name: Release plan
@@ -118,7 +118,7 @@ jobs:
       - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
         with:
           python-version: ${{ matrix.python-version }}
-      - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
+      - uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990
       - name: Prepare virtualenv
         shell: bash
         run: |
