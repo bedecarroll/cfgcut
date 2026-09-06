@@ -6,16 +6,12 @@ This repository publishes both the Rust CLI (`cfgcut`) and the Python bindings (
 
 1. Bump versions in `Cargo.toml` as needed (`crates/cfgcut` and `crates/pycfgcut`) and update the changelog.
 2. Regenerate the Python bindings with `mise run pytest` to ensure the wheel continues to pass its test suite locally.
-3. Merge the changes into `master` in the `carrollorg/bede.ai` monorepo.
+3. Ensure the version changes are available on `master`.
 
 ## Cutting a release
 
-1. In the monorepo, tag the merged commit with the project prefix, for example:
-   ```bash
-   git tag -a cfgcut/v0.4.0 -m "cfgcut v0.4.0"
-   git push origin cfgcut/v0.4.0
-   ```
-2. The monorepo forwards `v0.4.0` to this read-only mirror. Its `Release` workflow builds:
+1. Release tags use the format `vX.Y.Z`, for example `v0.4.0`.
+2. When a release tag is published, the `Release` workflow builds:
    - cfgcut binaries for Linux (GNU + musl), macOS (x86_64 + arm64), and Windows.
    - pycfgcut wheels for Linux (manylinux x86_64), macOS (x86_64 + arm64), and Windows, plus a source distribution.
    - A pytest smoke test for each built wheel and the sdist.
