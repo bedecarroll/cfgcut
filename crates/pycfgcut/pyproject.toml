@@ -34,7 +34,7 @@ classifiers = [
 Homepage = "https://cfgcut.bedecarroll.com"
 Documentation = "https://cfgcut.bedecarroll.com"
 Repository = "https://github.com/bedecarroll/cfgcut"
-Changelog = "https://github.com/bedecarroll/cfgcut/blob/main/CHANGELOG.md"
+Changelog = "https://github.com/bedecarroll/cfgcut/blob/master/CHANGELOG.md"
 
 [tool.maturin]
 bindings = "pyo3-abi3"
